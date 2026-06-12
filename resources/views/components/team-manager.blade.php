@@ -1,0 +1,133 @@
+<?php
+
+use Livewire\Component;
+use App\Models\Team;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
+
+new class extends Component
+{
+    public string $name = '';
+
+    public function createTeam()
+    {
+        $this->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:teams,name'],
+        ]);
+
+        $team = Team::create([
+            'name' => $this->name,
+            'category' => 'team',
+        ]);
+
+        Auth::user()->update([
+            'team_id' => $team->id,
+        ]);
+
+        $this->name = '';
+
+        Flux::toast(
+            text: __('Team created successfully.'),
+            variant: 'success',
+        );
+    }
+
+    public function updateStatus(\App\Models\User $user, string $status)
+    {
+        if (! in_array($status, ['off_duty', 'on_deck', 'riding'])) {
+            return;
+        }
+
+        $user->update(['status' => $status]);
+
+        Flux::toast(
+            text: __('Status updated to :status for :name.', ['status' => $status, 'name' => $user->name]),
+            variant: 'success',
+        );
+    }
+};
+?>
+
+<section class="w-full">
+    @if (! Auth::user()->team_id)
+        <flux:card class="max-w-xl mx-auto">
+            <div class="space-y-6">
+                <div>
+                    <flux:heading size="lg">{{ __('Create a Team') }}</flux:heading>
+                    <flux:subheading>{{ __('Start a new team to begin collaborating with others.') }}</flux:subheading>
+                </div>
+
+                <form wire:submit="createTeam" class="space-y-6">
+                    <flux:input
+                        wire:model="name"
+                        :label="__('Team Name')"
+                        type="text"
+                        required
+                        autofocus
+                        placeholder="{{ __('Enter team name') }}"
+                    />
+
+                    <div class="flex justify-end">
+                        <flux:button type="submit" variant="primary">
+                            {{ __('Create Team') }}
+                        </flux:button>
+                    </div>
+                </form>
+            </div>
+        </flux:card>
+    @else
+        <flux:card>
+            <div class="space-y-6">
+                <div>
+                    <flux:heading size="lg">{{ __('Team Roster') }}</flux:heading>
+                    <flux:subheading>{{ __('Members of your team and their current status.') }}</flux:subheading>
+                </div>
+
+                <flux:table>
+                    <flux:table.columns>
+                        <flux:table.column>{{ __('Name') }}</flux:table.column>
+                        <flux:table.column>{{ __('Role') }}</flux:table.column>
+                        <flux:table.column>{{ __('Status') }}</flux:table.column>
+                    </flux:table.columns>
+
+                    <flux:table.rows>
+                        @foreach (Auth::user()->team->members as $member)
+                            <flux:table.row>
+                                <flux:table.cell>
+                                    <div class="flex items-center gap-3">
+                                        <flux:avatar :name="$member->name" size="xs" />
+                                        <span>{{ $member->name }}</span>
+                                    </div>
+                                </flux:table.cell>
+                                <flux:table.cell>{{ $member->role }}</flux:cell>
+                                <flux:table.cell>
+                                    @php
+                                        $variant = match($member->status) {
+                                            'riding' => 'success',
+                                            'on_deck' => 'warning',
+                                            'off_duty' => 'neutral',
+                                            default => 'neutral',
+                                        };
+                                        $label = str($member->status)->replace('_', ' ')->title();
+                                    @endphp
+
+                                    <flux:dropdown>
+                                        <flux:button variant="subtle" size="sm" :icon-trailing="'chevron-down'">
+                                            <flux:badge :variant="$variant" size="sm" class="cursor-pointer">{{ $label }}</flux:badge>
+                                        </flux:button>
+
+                                        <flux:menu>
+                                            <flux:menu.item wire:click="updateStatus({{ $member->id }}, 'off_duty')">{{ __('Off Duty') }}</flux:menu.item>
+                                            <flux:menu.item wire:click="updateStatus({{ $member->id }}, 'on_deck')">{{ __('On Deck') }}</flux:menu.item>
+                                            <flux:menu.item wire:click="updateStatus({{ $member->id }}, 'riding')">{{ __('Riding') }}</flux:menu.item>
+                                        </flux:menu>
+                                    </flux:dropdown>
+                                </flux:table.cell>
+                            </flux:table.row>
+                        @endforeach
+                    </flux:table.rows>
+                </flux:table>
+            </div>
+        </flux:card>
+    @endif
+</section>
