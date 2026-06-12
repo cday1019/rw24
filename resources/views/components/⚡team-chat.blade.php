@@ -11,6 +11,26 @@ new class extends Component
     public string $body = '';
     public ?string $image_path = null;
 
+    // Tracks the highest message ID seen for each channel
+    public array $lastSeenIds = [1 => 0, 2 => 0, 3 => 0];
+
+    public function mount(): void
+    {
+        // When the dashboard first loads, mark existing messages as read
+        foreach ([1, 2, 3] as $id) {
+            $this->lastSeenIds[$id] = Message::where('channel_id', $id)->max('id') ?? 0;
+        }
+    }
+
+    /**
+     * Runs automatically right before the component renders on every lifecycle step (including polls)
+     */
+    public function rendering(): void
+    {
+        // Continuously mark the active channel's newest messages as read
+        $this->lastSeenIds[$this->activeChannel] = Message::where('channel_id', $this->activeChannel)->max('id') ?? 0;
+    }
+
     #[Computed]
     public function messages()
     {
@@ -23,13 +43,16 @@ new class extends Component
             ->reverse();
     }
 
-    #[Computed]
-    public function hasSosAlert(): bool
+    // Helper method to grab unread counts for the frontend tabs
+    public function getUnreadCount(int $channelId): int
     {
-        return Message::query()
-            ->where('channel_id', 2)
-            ->where('created_at', '>=', now()->subMinutes(30))
-            ->exists();
+        if ($channelId === $this->activeChannel) {
+            return 0;
+        }
+
+        return Message::where('channel_id', $channelId)
+            ->where('id', '>', $this->lastSeenIds[$channelId] ?? 0)
+            ->count();
     }
 
     public function sendMessage(): void
@@ -46,7 +69,6 @@ new class extends Component
             'body' => e($this->body),
         ];
 
-        // Strict validation for image_path
         if ($this->activeChannel === 3 && $this->image_path) {
             $messageData['image_path'] = $this->image_path;
         }
@@ -60,23 +82,34 @@ new class extends Component
 
     public function setChannel(int $channelId): void
     {
+        // Catch up on current channel before switching away
+        $this->lastSeenIds[$this->activeChannel] = Message::where('channel_id', $this->activeChannel)->max('id') ?? 0;
+
         $this->activeChannel = $channelId;
+
+        // Catch up on new channel immediately upon entry
+        $this->lastSeenIds[$channelId] = Message::where('channel_id', $channelId)->max('id') ?? 0;
     }
 }; ?>
 
 <div wire:poll.5s class="flex flex-col h-full bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
-    <!-- Tabs Header -->
     <div class="flex border-b border-neutral-200 dark:border-zinc-800 p-1 bg-neutral-50 dark:bg-zinc-950">
+
         <button
             wire:click="setChannel(1)"
             @class([
-                'flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-colors',
+                'flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-colors relative',
                 'bg-white dark:bg-zinc-800 shadow-sm text-neutral-900 dark:text-zinc-100' => $activeChannel === 1,
                 'text-neutral-500 dark:text-zinc-400 hover:text-neutral-700 dark:hover:text-zinc-200' => $activeChannel !== 1,
             ])
         >
             <span>War Room</span>
             <span>⚔️</span>
+            @if($this->getUnreadCount(1) > 0)
+                <span class="flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-neutral-400 dark:bg-zinc-600 text-[10px] font-bold text-white dark:text-zinc-200">
+                    {{ $this->getUnreadCount(1) }}
+                </span>
+            @endif
         </button>
 
         <button
@@ -85,18 +118,21 @@ new class extends Component
                 'flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-colors relative overflow-hidden',
                 'bg-white dark:bg-zinc-800 shadow-sm text-neutral-900 dark:text-zinc-100' => $activeChannel === 2,
                 'text-neutral-500 dark:text-zinc-400 hover:text-neutral-700 dark:hover:text-zinc-200' => $activeChannel !== 2,
-                'animate-pulse ring-2 ring-red-500 ring-inset' => $this->hasSosAlert,
+                'animate-pulse ring-2 ring-red-500 ring-inset' => $this->getUnreadCount(2) > 0 && $activeChannel !== 2,
             ])
         >
-            @if($this->hasSosAlert)
+            @if($this->getUnreadCount(2) > 0 && $activeChannel !== 2)
                 <span class="absolute inset-0 bg-red-500/10 dark:bg-red-500/20"></span>
             @endif
             <span class="relative z-10">SOS</span>
             <span class="relative z-10">🚨</span>
-            @if($this->hasSosAlert)
-                 <span class="absolute top-1 right-1 flex h-2 w-2">
+            @if($this->getUnreadCount(2) > 0 && $activeChannel !== 2)
+                <span class="absolute top-1 right-1 flex h-2 w-2">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                </span>
+                <span class="relative z-10 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+                    {{ $this->getUnreadCount(2) }}
                 </span>
             @endif
         </button>
@@ -111,10 +147,14 @@ new class extends Component
         >
             <span>Vibe Ward</span>
             <span>🎉</span>
+            @if($this->getUnreadCount(3) > 0)
+                <span class="flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white">
+                    {{ $this->getUnreadCount(3) }}
+                </span>
+            @endif
         </button>
     </div>
 
-    <!-- Messages Area -->
     <div
         x-data="{
             scrollToBottom() {
@@ -167,7 +207,6 @@ new class extends Component
         @endif
     </div>
 
-    <!-- Input Area -->
     <div class="p-4 border-t border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50">
         <form wire:submit="sendMessage" class="flex gap-2">
             <div class="flex-1">
