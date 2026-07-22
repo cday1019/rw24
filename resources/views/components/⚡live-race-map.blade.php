@@ -83,14 +83,17 @@ new class extends Component
             ->with('user')
             ->where('team_id', $user->team_id)
             ->where('pinged_at', '>=', now()->subMinutes(30))
+            ->orderBy('pinged_at', 'desc') // Sort latest pings first
             ->get()
+            ->unique('user_id')             // Keep only the most recent ping per user
             ->map(fn (TeamLocation $location) => [
-                'lat' => (float) $location->latitude,
-                'lng' => (float) $location->longitude,
-                'name' => $location->user->name,
+                'lat'      => (float) $location->latitude,
+                'lng'      => (float) $location->longitude,
+                'name'     => $location->user->name,
                 'initials' => $location->user->initials(),
-                'status' => $location->user->status,
+                'status'   => $location->user->status,
             ])
+            ->values()
             ->toArray();
     }
 };

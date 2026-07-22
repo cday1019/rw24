@@ -28,15 +28,13 @@ class LocationWebhookController extends Controller
         $user = User::where('name', 'like', "%{$username}%")->first();
 
         if ($user && $user->team_id) {
-            TeamLocation::updateOrCreate(
-                ['user_id' => $user->id],
-                [
-                    'team_id'   => $user->team_id,
-                    'latitude'  => $latitude,
-                    'longitude' => $longitude,
-                    'pinged_at' => now(),
-                ]
-            );
+            TeamLocation::create([
+                'user_id'   => $user->id,
+                'team_id'   => $user->team_id,
+                'latitude'  => $latitude,
+                'longitude' => $longitude,
+                'pinged_at' => now(),
+            ]);
         }
 
         // OwnTracks expects a 200 OK with an empty JSON object
