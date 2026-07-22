@@ -4,12 +4,13 @@
         <livewire:live-race-map />
 
         <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div class="relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-                <livewire:team-manager />
-            </div>
             <div class="md:col-span-2 relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
                 <livewire:team-chat />
             </div>
+            <div class="relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
+                <livewire:team-manager />
+            </div>
+
         </div>
         <div class="relative h-full flex-1 overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
             <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
