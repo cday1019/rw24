@@ -28,8 +28,9 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Adam Franz', 'email' => 'adam@example.com'],
             ['name' => 'Aaron Thrasher', 'email' => 'aaron@example.com'],
             ['name' => 'Troy Becker', 'email' => 'troy@example.com'],
-            ['name' => 'Bob BR', 'email' => 'bob@example.com'],
-            ['name' => 'Kyle BR', 'email' => 'kyle@example.com'],
+            ['name' => 'Bob', 'email' => 'bob@example.com'],
+            ['name' => 'Kyle', 'email' => 'kyle@example.com'],
+            ['name' => 'Kris Kouba', 'email' => 'kris@example.com'],
         ];
 
         foreach ($roster as $member) {
