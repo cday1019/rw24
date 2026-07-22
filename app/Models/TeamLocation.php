@@ -2,47 +2,30 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['team_id', 'user_id', 'latitude', 'longitude', 'pinged_at'])]
 class TeamLocation extends Model
 {
     use HasFactory;
 
-    /**
-     * Get the team that owns the location.
-     *
-     * @return BelongsTo<Team, TeamLocation>
-     */
-    public function team(): BelongsTo
-    {
-        return $this->belongsTo(Team::class);
-    }
+    protected $fillable = [
+        'user_id',
+        'team_id',
+        'latitude',
+        'longitude',
+        'speed',
+        'battery',
+        'pinged_at',
+    ];
 
-    /**
-     * Get the user that owns the location.
-     *
-     * @return BelongsTo<User, TeamLocation>
-     */
-    public function user(): BelongsTo
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    public function team()
     {
-        return [
-            'pinged_at' => 'datetime',
-            'latitude' => 'float',
-            'longitude' => 'float',
-        ];
+        return $this->belongsTo(Team::class);
     }
 }
