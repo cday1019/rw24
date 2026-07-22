@@ -21,6 +21,13 @@ class LocationWebhookController extends Controller
         $longitude = $request->input('lon');
         $trackerId = $request->input('tid'); // e.g. Rider initials ("CD")
 
+        // OwnTracks sends velocity in km/h -> Convert to mph
+        $velKm    = $request->input('vel', 0);
+        $speedMph = round($velKm * 0.621371, 1);
+
+        // Battery percentage (0 - 100)
+        $battery = $request->input('batt');
+
         // Extract username from topic (e.g. "owntracks/chad/iphone" -> "chad")
         $topicParts = explode('/', $request->input('topic', ''));
         $username   = $topicParts[1] ?? null;
@@ -33,6 +40,8 @@ class LocationWebhookController extends Controller
                 'team_id'   => $user->team_id,
                 'latitude'  => $latitude,
                 'longitude' => $longitude,
+                'speed'     => $speedMph,
+                'battery'   => $battery,
                 'pinged_at' => now(),
             ]);
         }

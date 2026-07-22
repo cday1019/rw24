@@ -92,6 +92,8 @@ new class extends Component
                 'name'     => $location->user->name,
                 'initials' => $location->user->initials(),
                 'status'   => $location->user->status,
+                'speed'    => $location->speed ? round($location->speed) . ' mph' : '0 mph',
+                'battery'  => $location->battery ? $location->battery . '%' : 'N/A',
             ])
             ->values()
             ->toArray();
@@ -205,7 +207,7 @@ fitMapToRoute() {
                         color: 'white',
                         fontWeight: 'bold'
                     },
-                    title: loc.name + ' (' + loc.status + ')'
+                    title: `${loc.name} (${loc.speed} • 🔋 ${loc.battery})`
                 });
                 mapEl._riderMarkers.push(marker);
             });

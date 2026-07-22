@@ -99,4 +99,10 @@ class User extends Authenticatable implements PasskeyUser
     {
         return $this->hasOne(TeamLocation::class);
     }
+
+    public function latestLocation()
+    {
+        return $this->hasOne(TeamLocation::class)->latestOfMany('pinged_at');
+    }
 }
+

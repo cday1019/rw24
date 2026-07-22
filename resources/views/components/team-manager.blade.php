@@ -86,20 +86,33 @@ new class extends Component
                 <flux:table>
                     <flux:table.columns>
                         <flux:table.column>{{ __('Name') }}</flux:table.column>
-{{--                        <flux:table.column>{{ __('Role') }}</flux:table.column>--}}
                         <flux:table.column>{{ __('Status') }}</flux:table.column>
                     </flux:table.columns>
 
                     <flux:table.rows>
                         @foreach (Auth::user()->team->members as $member)
+                            @php
+                                $location = $member->latestLocation;
+                            @endphp
                             <flux:table.row>
                                 <flux:table.cell>
                                     <div class="flex items-center gap-3">
                                         <flux:avatar :name="$member->name" size="xs" />
-                                        <span>{{ $member->name }}</span>
+                                        <div class="flex flex-col">
+                                            <span class="font-medium text-white">{{ $member->name }}</span>
+                                            @if ($location)
+                                                <span class="text-xs text-neutral-400 flex items-center gap-2">
+                                                    <span>⚡ {{ round($location->speed ?? 0) }} mph</span>
+                                                    @if ($location->battery !== null)
+                                                        <span>• 🔋 {{ $location->battery }}%</span>
+                                                    @endif
+                                                </span>
+                                            @else
+                                                <span class="text-xs text-neutral-500">No telemetry yet</span>
+                                            @endif
+                                        </div>
                                     </div>
                                 </flux:table.cell>
-{{--                                <flux:table.cell>{{ $member->role }}</flux:cell>--}}
                                 <flux:table.cell>
                                     @php
                                         $variant = match($member->status) {
