@@ -11,6 +11,7 @@ class LocationWebhookController extends Controller
 {
     public function store(Request $request)
     {
+        \Log::info('OwnTracks payload:', $request->all());
         // Ignore ping/status events from OwnTracks
         if ($request->input('_type') !== 'location') {
             return response()->json([]);
