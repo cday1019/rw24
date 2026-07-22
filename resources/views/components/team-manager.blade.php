@@ -86,7 +86,7 @@ new class extends Component
                 <flux:table>
                     <flux:table.columns>
                         <flux:table.column>{{ __('Name') }}</flux:table.column>
-                        <flux:table.column>{{ __('Role') }}</flux:table.column>
+{{--                        <flux:table.column>{{ __('Role') }}</flux:table.column>--}}
                         <flux:table.column>{{ __('Status') }}</flux:table.column>
                     </flux:table.columns>
 
@@ -99,7 +99,7 @@ new class extends Component
                                         <span>{{ $member->name }}</span>
                                     </div>
                                 </flux:table.cell>
-                                <flux:table.cell>{{ $member->role }}</flux:cell>
+{{--                                <flux:table.cell>{{ $member->role }}</flux:cell>--}}
                                 <flux:table.cell>
                                     @php
                                         $variant = match($member->status) {
