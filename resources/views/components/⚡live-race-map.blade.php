@@ -97,7 +97,7 @@ new class extends Component
 ?>
 
 <div class="relative h-full w-full min-h-[400px] rounded-xl overflow-hidden"
-     wire:poll.30s="updateLocations"
+     wire:poll.10s="updateLocations"
      x-data="{
         locations: @entangle('teammateLocations'),
         routePaths: @js($routePaths),
