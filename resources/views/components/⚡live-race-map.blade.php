@@ -93,31 +93,12 @@ new class extends Component
             ])
             ->toArray();
     }
-
-    public function updateRiderLocation($latitude, $longitude): void
-    {
-        $user = Auth::user();
-
-        if (! $user || ! $user->team_id) {
-            return;
-        }
-
-        TeamLocation::updateOrCreate(
-            ['user_id' => $user->id],
-            [
-                'team_id' => $user->team_id,
-                'latitude' => $latitude,
-                'longitude' => $longitude,
-                'pinged_at' => now(),
-            ]
-        );
-    }
 };
 ?>
 
 <div class="relative h-full w-full min-h-[400px] rounded-xl overflow-hidden"
-    wire:poll.30s="updateLocations"
-    x-data="{
+     wire:poll.30s="updateLocations"
+     x-data="{
         locations: @entangle('teammateLocations'),
         routePaths: @js($routePaths),
         checkpoints: @js($checkpoints),
@@ -125,40 +106,8 @@ new class extends Component
         markers: [],
         routePolylines: [],
         checkpointMarkers: [],
-        trackingStarted: false,
         init() {
             this.$watch('locations', () => this.updateMarkers());
-        },
-        startTracking() {
-            if (this.trackingStarted) return;
-            if (!('geolocation' in navigator)) return;
-
-            const track = () => {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        this.$wire.updateRiderLocation(
-                            position.coords.latitude,
-                            position.coords.longitude
-                        );
-                    },
-                    (error) => {
-                        console.error('Geolocation error:', error);
-                    },
-                    {
-                        enableHighAccuracy: true,
-                        timeout: 5000,
-                        maximumAge: 0
-                    }
-                );
-            };
-
-            // Initial ping
-            track();
-
-            // Background heartbeat every 30 seconds
-            setInterval(track, 30000);
-
-            this.trackingStarted = true;
         },
         renderRoute() {
             if (!this.map) return;
@@ -252,19 +201,11 @@ new class extends Component
 >
     <div id="map" class="h-full w-full" wire:ignore></div>
 
-    <div x-show="!trackingStarted" class="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-10">
-        <flux:button variant="primary" x-on:click="startTracking()">
-            Enable Live Tracking
-        </flux:button>
-    </div>
-
     <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_key') }}&callback=initMap" async defer></script>
 
     <script>
         function initMap() {
             const mapContainer = document.getElementById('map');
-            const alpineData = Alpine.$data(mapContainer.closest('[x-data]'));
-
             const mapOptions = {
                 zoom: 13,
                 styles: [
