@@ -103,18 +103,18 @@ new class extends Component
         routePaths: @js($routePaths),
         checkpoints: @js($checkpoints),
         map: null,
-        markers: [],
-        routePolylines: [],
-        checkpointMarkers: [],
         init() {
             this.$watch('locations', () => this.updateMarkers());
         },
         renderRoute() {
             if (!this.map) return;
+            const mapEl = document.getElementById('map');
+            if (!mapEl._polylines) mapEl._polylines = [];
+            if (!mapEl._checkpoints) mapEl._checkpoints = [];
 
             // Clear existing route polylines
-            this.routePolylines.forEach(p => p.setMap(null));
-            this.routePolylines = [];
+            mapEl._polylines.forEach(p => p.setMap(null));
+            mapEl._polylines = [];
 
             // Render new route polylines
             this.routePaths.forEach(rp => {
@@ -126,12 +126,12 @@ new class extends Component
                     strokeWeight: 5,
                     map: this.map
                 });
-                this.routePolylines.push(polyline);
+                mapEl._polylines.push(polyline);
             });
 
             // Clear existing checkpoint markers
-            this.checkpointMarkers.forEach(m => m.setMap(null));
-            this.checkpointMarkers = [];
+            mapEl._checkpoints.forEach(m => m.setMap(null));
+            mapEl._checkpoints = [];
 
             // Render new checkpoint markers
             this.checkpoints.forEach(cp => {
@@ -155,7 +155,7 @@ new class extends Component
                         className: 'mt-8'
                     }
                 });
-                this.checkpointMarkers.push(marker);
+                mapEl._checkpoints.push(marker);
             });
 
             this.fitMapToRoute();
@@ -177,10 +177,12 @@ new class extends Component
         },
         updateMarkers() {
             if (!this.map) return;
+            const mapEl = document.getElementById('map');
+            if (!mapEl._riderMarkers) mapEl._riderMarkers = [];
 
-            // Clear existing rider markers
-            this.markers.forEach(marker => marker.setMap(null));
-            this.markers = [];
+            // Clear existing rider markers cleanly
+            mapEl._riderMarkers.forEach(marker => marker.setMap(null));
+            mapEl._riderMarkers = [];
 
             // Add new rider markers
             this.locations.forEach(loc => {
@@ -194,7 +196,7 @@ new class extends Component
                     },
                     title: loc.name + ' (' + loc.status + ')'
                 });
-                this.markers.push(marker);
+                mapEl._riderMarkers.push(marker);
             });
         }
     }"
