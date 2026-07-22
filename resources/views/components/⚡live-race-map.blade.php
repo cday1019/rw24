@@ -163,21 +163,29 @@ new class extends Component
 
             this.fitMapToRoute();
         },
-        fitMapToRoute() {
-            const bounds = new google.maps.LatLngBounds();
-            let hasPoints = false;
+fitMapToRoute() {
+    if (!this.map) return;
+    const bounds = new google.maps.LatLngBounds();
+    let hasPoints = false;
 
-            this.routePaths.forEach(rp => {
-                rp.path.forEach(pos => {
-                    bounds.extend(pos);
-                    hasPoints = true;
-                });
-            });
+    // Include KML Route
+    this.routePaths.forEach(rp => {
+        rp.path.forEach(pos => {
+            bounds.extend(pos);
+            hasPoints = true;
+        });
+    });
 
-            if (hasPoints) {
-                this.map.fitBounds(bounds);
-            }
-        },
+    // Include Active Teammates
+    this.locations.forEach(loc => {
+        bounds.extend({ lat: loc.lat, lng: loc.lng });
+        hasPoints = true;
+    });
+
+    if (hasPoints) {
+        this.map.fitBounds(bounds);
+    }
+},
         updateMarkers() {
             if (!this.map) return;
             const mapEl = document.getElementById('map');
