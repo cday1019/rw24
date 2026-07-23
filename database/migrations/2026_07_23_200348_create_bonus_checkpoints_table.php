@@ -13,8 +13,8 @@ return new class extends Migration
             $table->foreignId('team_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('location')->nullable();
-            $table->time('opens_at')->nullable();
-            $table->time('closes_at')->nullable();
+            $table->dateTime('opens_at')->nullable();
+            $table->dateTime('closes_at')->nullable();
             $table->integer('points')->default(1);
             $table->string('status')->default('pending'); // pending, completed, skipped
             $table->foreignId('assigned_user_id')->nullable()->constrained('users')->nullOnDelete();
