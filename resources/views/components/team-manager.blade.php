@@ -154,9 +154,15 @@ new class extends Component
                                         </flux:button>
 
                                         <flux:menu>
-                                            <flux:menu.item wire:click="updateStatus({{ $member->id }}, 'off_duty')">{{ __('Off Duty') }}</flux:menu.item>
-                                            <flux:menu.item wire:click="updateStatus({{ $member->id }}, 'on_deck')">{{ __('On Deck') }}</flux:menu.item>
-                                            <flux:menu.item wire:click="updateStatus({{ $member->id }}, 'riding')">{{ __('Riding') }}</flux:menu.item>
+                                            <flux:menu.item @click="$wire.updateStatus({{ $member->id }}, 'off_duty')">
+                                                {{ __('Off Duty') }}
+                                            </flux:menu.item>
+                                            <flux:menu.item @click="$wire.updateStatus({{ $member->id }}, 'on_deck')">
+                                                {{ __('On Deck') }}
+                                            </flux:menu.item>
+                                            <flux:menu.item @click="$wire.updateStatus({{ $member->id }}, 'riding')">
+                                                {{ __('Riding') }}
+                                            </flux:menu.item>
                                         </flux:menu>
                                     </flux:dropdown>
                                 </flux:table.cell>
