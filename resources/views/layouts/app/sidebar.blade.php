@@ -41,14 +41,48 @@
         </flux:sidebar.item>
     </flux:sidebar.nav>
 
+    <!-- Desktop Real-Time System Clock -->
+    <div class="px-2 py-1.5 hidden lg:block">
+        <div
+            x-data="{
+                time: '',
+                updateClock() {
+                    const now = new Date();
+                    this.time = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+                }
+            }"
+            x-init="updateClock(); setInterval(() => updateClock(), 1000)"
+            class="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md bg-zinc-200/70 dark:bg-zinc-800/80 border border-zinc-300/80 dark:border-zinc-700/60 text-zinc-800 dark:text-zinc-200 font-mono text-xs shadow-xs"
+        >
+            <flux:icon name="clock" class="size-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span x-text="time"></span>
+        </div>
+    </div>
+
     <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
 </flux:sidebar>
 
-<!-- Mobile User Menu -->
+<!-- Mobile User Menu & Header -->
 <flux:header class="lg:hidden">
     <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
     <flux:spacer />
+
+    <!-- Mobile Real-Time System Clock -->
+    <div
+        x-data="{
+            time: '',
+            updateClock() {
+                const now = new Date();
+                this.time = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+            }
+        }"
+        x-init="updateClock(); setInterval(() => updateClock(), 1000)"
+        class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-200/70 dark:bg-zinc-800/80 border border-zinc-300/80 dark:border-zinc-700/60 text-zinc-800 dark:text-zinc-200 font-mono text-xs me-2 shadow-xs"
+    >
+        <flux:icon name="clock" class="size-3.5 text-emerald-600 dark:text-emerald-400" />
+        <span x-text="time"></span>
+    </div>
 
     <flux:dropdown position="top" align="end">
         <flux:profile
