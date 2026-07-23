@@ -60,6 +60,9 @@ new class extends Component
     {
         $this->reset(['editingCheckpointId', 'name', 'location', 'opens_at', 'closes_at', 'points', 'assigned_user_id', 'notes']);
         $this->points = 1;
+
+        // Default opens_at to Friday night of race weekend if empty
+        $this->opens_at = now()->format('Y-m-d\T19:00');
         $this->showModal = true;
     }
 
@@ -70,8 +73,11 @@ new class extends Component
         $this->editingCheckpointId = $checkpoint->id;
         $this->name = $checkpoint->name;
         $this->location = $checkpoint->location ?? '';
-        $this->opens_at = $checkpoint->opens_at ?? '';
-        $this->closes_at = $checkpoint->closes_at ?? '';
+
+        // Format Carbon dates for datetime-local inputs
+        $this->opens_at = $checkpoint->opens_at ? $checkpoint->opens_at->format('Y-m-d\TH:i') : '';
+        $this->closes_at = $checkpoint->closes_at ? $checkpoint->closes_at->format('Y-m-d\TH:i') : '';
+
         $this->points = $checkpoint->points;
         $this->assigned_user_id = $checkpoint->assigned_user_id;
         $this->notes = $checkpoint->notes ?? '';
@@ -216,8 +222,8 @@ new class extends Component
                                     </div>
                                     @if($cp->opens_at || $cp->closes_at)
                                         <span class="text-xs font-mono text-zinc-400">
-                                            ⏰ {{ $cp->opens_at ? \Carbon\Carbon::parse($cp->opens_at)->format('g:i A') : 'Anytime' }}
-                                            - {{ $cp->closes_at ? \Carbon\Carbon::parse($cp->closes_at)->format('g:i A') : 'End' }}
+                                            ⏰ {{ $cp->opens_at ? $cp->opens_at->format('D g:i A') : 'Anytime' }}
+                                            - {{ $cp->closes_at ? $cp->closes_at->format('D g:i A') : 'End' }}
                                         </span>
                                     @endif
                                     @if($cp->notes)
@@ -312,8 +318,8 @@ new class extends Component
             <flux:input wire:model="location" label="Location / Address" placeholder="e.g. Bremen & Wright St" />
 
             <div class="grid grid-cols-2 gap-3">
-                <flux:input wire:model="opens_at" type="time" label="Opens At" />
-                <flux:input wire:model="closes_at" type="time" label="Closes At" />
+                <flux:input wire:model="opens_at" type="datetime-local" label="Opens At" />
+                <flux:input wire:model="closes_at" type="datetime-local" label="Closes At" />
             </div>
 
             <flux:input wire:model="points" type="number" min="1" label="Points Value" required />
