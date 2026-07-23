@@ -19,6 +19,10 @@
             <flux:sidebar.item icon="device-phone-mobile" :href="route('owntracks.setup')" :current="request()->routeIs('owntracks.setup')" wire:navigate>
                 {{ __('OwnTracks Setup') }}
             </flux:sidebar.item>
+
+            <flux:sidebar.item icon="book-open" :href="route('playbook')" :current="request()->routeIs('playbook')" wire:navigate>
+                {{ __('Team Playbook') }}
+            </flux:sidebar.item>
         </flux:sidebar.group>
     </flux:sidebar.nav>
 

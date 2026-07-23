@@ -14,4 +14,8 @@ Route::middleware(['auth'])->group(function () {
     Route::view('/setup/owntracks', 'owntracks-setup')->name('owntracks.setup');
 });
 
+Route::get('/playbook', function () {
+    return view('team-playbook');
+})->middleware(['auth'])->name('playbook');
+
 require __DIR__.'/settings.php';
