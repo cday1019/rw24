@@ -142,7 +142,7 @@
                     <flux:badge color="indigo" size="sm">Race Mode Required</flux:badge>
                 </div>
                 <p class="text-sm text-neutral-300">
-                    By default, OwnTracks defaults to <em>Significant</em> mode (infrequent updates). For live race tracking, tap the <strong>navigation/arrow icon</strong> in the top left of the main app map until it says <strong class="text-emerald-400">Move</strong>.
+                    By default, OwnTracks defaults to <em>Significant</em> mode (infrequent updates). For live race tracking, select the <strong>Move</strong> option in the top left of the main app map.
                 </p>
 
                 <!-- Comparison Table -->
@@ -187,7 +187,7 @@
                             <td class="p-3 text-emerald-400 font-bold">Continuous GPS</td>
                             <td class="p-3 text-emerald-400 font-semibold">Real-time (Every 10–30 sec)</td>
                             <td class="p-3 text-red-400 font-semibold">High</td>
-                            <td class="p-3 font-bold text-emerald-400">Active Race Riding (REQUIRED!)</td>
+                            <td class="p-3 font-bold text-emerald-400">Active Race Riding</td>
                         </tr>
                         </tbody>
                     </table>
