@@ -4,10 +4,18 @@ use Livewire\Component;
 use App\Models\Team;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\On;
 
 new class extends Component
 {
     public string $name = '';
+
+    // Listens to your team's private WebSocket channel
+    #[On('echo-private:team.{teamId},LocationUpdated')]
+    public function handleLocationUpdated()
+    {
+        // Re-renders component when a location event arrives
+    }
 
     public function createTeam()
     {

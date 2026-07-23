@@ -5,12 +5,28 @@ use Livewire\Component;
 use Livewire\Attributes\Computed;
 use App\Models\TeamLocation;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\On;
 
 new class extends Component
 {
     public array $teammateLocations = [];
     public array $routePaths = [];
     public array $checkpoints = [];
+
+    #[On('echo-private:team.{user.team_id},LocationUpdated')]
+    public function handleLocationUpdated($event)
+    {
+        $updatedLoc = $event['locationData'];
+
+        // Convert existing locations to a collection keyed by user_id
+        $locations = collect($this->teammateLocations)->keyBy('user_id');
+
+        // Replace/Add the updated teammate's telemetry
+        $locations->put($updatedLoc['user_id'], $updatedLoc);
+
+        // Re-assign back to state so Alpine updates markers on the map instantly
+        $this->teammateLocations = $locations->values()->toArray();
+    }
 
     public function mount()
     {
