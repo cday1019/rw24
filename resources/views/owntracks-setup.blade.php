@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-layouts::app :title="__('OwnTracks Setup')">
     <div class="max-w-3xl mx-auto space-y-6 py-6">
         <div>
             <flux:heading size="xl">OwnTracks GPS Setup Guide</flux:heading>
@@ -47,4 +47,4 @@
             </div>
         </flux:card>
     </div>
-</x-app-layout>
+</x-layouts::app>
