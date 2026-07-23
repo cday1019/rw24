@@ -19,7 +19,7 @@
                     Tap the button below to copy your unique location endpoint URL:
                 </p>
                 <div class="flex items-center gap-2 pt-1">
-                    <flux:input readonly value="{{ request()->schemeAndHttpHost() }}/api/locations-webhook" id="endpoint-url" class="font-mono text-sm bg-zinc-950 text-emerald-400 font-bold" />
+                    <flux:input readonly value="{{ secure_url('/api/locations-webhook') }}" id="endpoint-url" class="font-mono text-sm bg-zinc-950 text-emerald-400 font-bold" />
                     <flux:button icon="clipboard" variant="primary" onclick="navigator.clipboard.writeText(document.getElementById('endpoint-url').value); alert('URL copied to clipboard!');">
                         Copy URL
                     </flux:button>
@@ -85,7 +85,7 @@
                             </li>
                             <li class="bg-zinc-900/80 p-2 rounded space-y-1">
                                 <span class="text-neutral-400 block">URL Field (at bottom):</span>
-                                <span class="text-emerald-400 font-bold break-all block">{{ request()->schemeAndHttpHost() }}/api/locations-webhook</span>
+                                <span class="text-emerald-400 font-bold break-all block">{{ secure_url('/api/locations-webhook') }}</span>
                             </li>
                         </ul>
                     </div>
@@ -111,7 +111,7 @@
                             </li>
                             <li class="bg-zinc-900/80 p-2 rounded space-y-1">
                                 <span class="text-neutral-400 block">Host / Endpoint URL:</span>
-                                <span class="text-emerald-400 font-bold break-all block">{{ request()->schemeAndHttpHost() }}/api/locations-webhook</span>
+                                <span class="text-emerald-400 font-bold break-all block">{{ secure_url('/api/locations-webhook') }}</span>
                             </li>
                         </ul>
                     </div>
