@@ -134,10 +134,75 @@
             </div>
         </flux:card>
 
-        <!-- Step 5: Test Ping -->
+        <!-- Step 5: Race Tracking Mode & Options Table -->
+        <flux:card class="border-indigo-500/30">
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <flux:heading size="lg" class="text-indigo-400">5. Switch Monitoring Mode to "Move"</flux:heading>
+                    <flux:badge color="indigo" size="sm">Race Mode Required</flux:badge>
+                </div>
+                <p class="text-sm text-neutral-300">
+                    By default, OwnTracks defaults to <em>Significant</em> mode (infrequent updates). For live race tracking, tap the <strong>navigation/arrow icon</strong> in the top left of the main app map until it says <strong class="text-emerald-400">Move</strong>.
+                </p>
+
+                <!-- Comparison Table -->
+                <div class="overflow-x-auto rounded-lg border border-zinc-700/80">
+                    <table class="w-full text-left text-xs text-neutral-300 border-collapse">
+                        <thead>
+                        <tr class="border-b border-zinc-700 bg-zinc-900 text-zinc-300 font-bold">
+                            <th class="p-3">Monitoring Mode</th>
+                            <th class="p-3">GPS Tracking</th>
+                            <th class="p-3">Update Frequency</th>
+                            <th class="p-3">Battery Drain</th>
+                            <th class="p-3">Best Used For</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-zinc-800 bg-zinc-950/60">
+                        <tr>
+                            <td class="p-3 font-bold text-white">Quiet</td>
+                            <td class="p-3 text-neutral-400">Off</td>
+                            <td class="p-3">Manual pings only</td>
+                            <td class="p-3 text-emerald-400 font-semibold">None (0%)</td>
+                            <td class="p-3 text-neutral-400">Complete privacy / Pausing app</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-bold text-white">Manual</td>
+                            <td class="p-3 text-neutral-400">Off</td>
+                            <td class="p-3">Geofence enter/exit & manual pings</td>
+                            <td class="p-3 text-emerald-400 font-semibold">Minimal</td>
+                            <td class="p-3 text-neutral-400">Checkpoint alerts & saving battery</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-bold text-white">Significant</td>
+                            <td class="p-3 text-amber-400">Low-Power GPS</td>
+                            <td class="p-3">Every ~500m / 5 minutes</td>
+                            <td class="p-3 text-amber-400 font-semibold">Low</td>
+                            <td class="p-3 text-neutral-400">Everyday casual background tracking</td>
+                        </tr>
+                        <tr class="bg-indigo-950/40 border-l-4 border-indigo-500">
+                            <td class="p-3 font-bold text-indigo-300 flex items-center gap-1.5">
+                                <span>Move</span>
+                                <span class="text-xs">⚡</span>
+                            </td>
+                            <td class="p-3 text-emerald-400 font-bold">Continuous GPS</td>
+                            <td class="p-3 text-emerald-400 font-semibold">Real-time (Every 10–30 sec)</td>
+                            <td class="p-3 text-red-400 font-semibold">High</td>
+                            <td class="p-3 font-bold text-emerald-400">Active Race Riding (REQUIRED!)</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-neutral-300">
+                    <span class="text-amber-400 font-bold">💡 Pro Tip:</span> <strong>Move mode</strong> consumes battery similar to active Google Maps navigation. Keep a portable USB power bank in your jersey/pack during long shifts!
+                </div>
+            </div>
+        </flux:card>
+
+        <!-- Step 6: Test Ping -->
         <flux:card>
             <div class="space-y-3">
-                <flux:heading size="lg">5. Test Connection</flux:heading>
+                <flux:heading size="lg">6. Test Connection</flux:heading>
                 <ol class="list-decimal list-inside space-y-2 text-sm text-neutral-300">
                     <li>Go back to the main OwnTracks app screen.</li>
                     <li>Tap the <strong>Upload/Publish arrow</strong> icon in the top right corner.</li>
