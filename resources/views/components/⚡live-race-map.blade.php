@@ -5,7 +5,6 @@ use Livewire\Component;
 use Livewire\Attributes\Computed;
 use App\Models\TeamLocation;
 use Illuminate\Support\Facades\Auth;
-use Livewire\Attributes\On;
 
 new class extends Component
 {
@@ -14,18 +13,13 @@ new class extends Component
     public array $checkpoints = [];
     public ?int $teamId = null;
 
-    #[On('echo-private:team.{teamId},LocationUpdated')]
     public function handleLocationUpdated($event)
     {
         $updatedLoc = $event['locationData'];
 
-        // Convert existing locations to a collection keyed by user_id
         $locations = collect($this->teammateLocations)->keyBy('user_id');
-
-        // Replace/Add the updated teammate's telemetry
         $locations->put($updatedLoc['user_id'], $updatedLoc);
 
-        // Re-assign back to state so Alpine updates markers on the map instantly
         $this->teammateLocations = $locations->values()->toArray();
     }
 
@@ -34,6 +28,17 @@ new class extends Component
         $this->teamId = Auth::user()?->team_id;
         $this->updateLocations();
         $this->loadRouteData();
+    }
+
+    public function getListeners()
+    {
+        if (! $this->teamId) {
+            return [];
+        }
+
+        return [
+            "echo-private:team.{$this->teamId},LocationUpdated" => 'handleLocationUpdated',
+        ];
     }
 
     public function loadRouteData(): void
@@ -101,10 +106,11 @@ new class extends Component
             ->with('user')
             ->where('team_id', $user->team_id)
             ->where('pinged_at', '>=', now()->subMinutes(30))
-            ->orderBy('pinged_at', 'desc') // Sort latest pings first
+            ->orderBy('pinged_at', 'desc')
             ->get()
-            ->unique('user_id')             // Keep only the most recent ping per user
+            ->unique('user_id')
             ->map(fn (TeamLocation $location) => [
+                'user_id'  => $location->user_id,
                 'lat'      => (float) $location->latitude,
                 'lng'      => (float) $location->longitude,
                 'name'     => $location->user->name,
@@ -120,7 +126,6 @@ new class extends Component
 ?>
 
 <div class="relative h-full w-full min-h-[400px] rounded-xl overflow-hidden"
-     wire:poll.10s="updateLocations"
      x-data="{
         locations: @entangle('teammateLocations'),
         routePaths: @js($routePaths),
@@ -183,29 +188,29 @@ new class extends Component
 
             this.fitMapToRoute();
         },
-fitMapToRoute() {
-    if (!this.map) return;
-    const bounds = new google.maps.LatLngBounds();
-    let hasPoints = false;
+        fitMapToRoute() {
+            if (!this.map) return;
+            const bounds = new google.maps.LatLngBounds();
+            let hasPoints = false;
 
-    // Include KML Route
-    this.routePaths.forEach(rp => {
-        rp.path.forEach(pos => {
-            bounds.extend(pos);
-            hasPoints = true;
-        });
-    });
+            // Include KML Route
+            this.routePaths.forEach(rp => {
+                rp.path.forEach(pos => {
+                    bounds.extend(pos);
+                    hasPoints = true;
+                });
+            });
 
-    // Include Active Teammates
-    this.locations.forEach(loc => {
-        bounds.extend({ lat: loc.lat, lng: loc.lng });
-        hasPoints = true;
-    });
+            // Include Active Teammates
+            this.locations.forEach(loc => {
+                bounds.extend({ lat: loc.lat, lng: loc.lng });
+                hasPoints = true;
+            });
 
-    if (hasPoints) {
-        this.map.fitBounds(bounds);
-    }
-},
+            if (hasPoints) {
+                this.map.fitBounds(bounds);
+            }
+        },
         updateMarkers() {
             if (!this.map) return;
             const mapEl = document.getElementById('map');
@@ -245,81 +250,21 @@ fitMapToRoute() {
                     { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
                     { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
                     { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-                    {
-                        featureType: "administrative.locality",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#d59563" }],
-                    },
-                    {
-                        featureType: "poi",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#d59563" }],
-                    },
-                    {
-                        featureType: "poi.park",
-                        elementType: "geometry",
-                        stylers: [{ color: "#263c3f" }],
-                    },
-                    {
-                        featureType: "poi.park",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#6b9a76" }],
-                    },
-                    {
-                        featureType: "road",
-                        elementType: "geometry",
-                        stylers: [{ color: "#38414e" }],
-                    },
-                    {
-                        featureType: "road",
-                        elementType: "geometry.stroke",
-                        stylers: [{ color: "#212a37" }],
-                    },
-                    {
-                        featureType: "road",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#9ca5b3" }],
-                    },
-                    {
-                        featureType: "road.highway",
-                        elementType: "geometry",
-                        stylers: [{ color: "#746855" }],
-                    },
-                    {
-                        featureType: "road.highway",
-                        elementType: "geometry.stroke",
-                        stylers: [{ color: "#1f2835" }],
-                    },
-                    {
-                        featureType: "road.highway",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#f3d19c" }],
-                    },
-                    {
-                        featureType: "transit",
-                        elementType: "geometry",
-                        stylers: [{ color: "#2f3948" }],
-                    },
-                    {
-                        featureType: "transit.station",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#d59563" }],
-                    },
-                    {
-                        featureType: "water",
-                        elementType: "geometry",
-                        stylers: [{ color: "#17263c" }],
-                    },
-                    {
-                        featureType: "water",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#515c6d" }],
-                    },
-                    {
-                        featureType: "water",
-                        elementType: "labels.text.stroke",
-                        stylers: [{ color: "#17263c" }],
-                    },
+                    { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+                    { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+                    { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#263c3f" }] },
+                    { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b9a76" }] },
+                    { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] },
+                    { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
+                    { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
+                    { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
+                    { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
+                    { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3d19c" }] },
+                    { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
+                    { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+                    { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
+                    { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
+                    { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] },
                 ],
             };
             const mapElement = document.getElementById("map");

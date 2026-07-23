@@ -4,17 +4,32 @@ use Livewire\Component;
 use App\Models\Team;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
-use Livewire\Attributes\On;
 
 new class extends Component
 {
     public string $name = '';
+    public ?int $teamId = null;
 
-    // Listens to your team's private WebSocket channel
-    #[On('echo-private:team.{teamId},LocationUpdated')]
+    public function mount()
+    {
+        $this->teamId = Auth::user()?->team_id;
+    }
+
+    // Safely returns listeners only if teamId is set
+    public function getListeners()
+    {
+        if (! $this->teamId) {
+            return [];
+        }
+
+        return [
+            "echo-private:team.{$this->teamId},LocationUpdated" => 'handleLocationUpdated',
+        ];
+    }
+
     public function handleLocationUpdated()
     {
-        // Re-renders component when a location event arrives
+        // Re-renders the component when a location event arrives
     }
 
     public function createTeam()
@@ -32,6 +47,7 @@ new class extends Component
             'team_id' => $team->id,
         ]);
 
+        $this->teamId = $team->id;
         $this->name = '';
 
         Flux::toast(
@@ -56,8 +72,7 @@ new class extends Component
 };
 ?>
 
-    <!-- Added wire:poll.10s here to refresh the roster every 10 seconds -->
-<section class="w-full" wire:poll.10s>
+<section class="w-full">
     @if (! Auth::user()->team_id)
         <flux:card class="max-w-xl mx-auto">
             <div class="space-y-6">
@@ -99,7 +114,6 @@ new class extends Component
                     </flux:table.columns>
 
                     <flux:table.rows>
-                        {{-- Eager-load latestLocation on every poll --}}
                         @foreach (Auth::user()->team->members()->with('latestLocation')->get() as $member)
                             @php
                                 $location = $member->latestLocation;
