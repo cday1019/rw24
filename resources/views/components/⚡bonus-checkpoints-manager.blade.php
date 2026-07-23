@@ -30,7 +30,7 @@ new class extends Component
 
         return BonusCheckpoint::where('team_id', $teamId)
             ->with('assignedUser')
-            ->orderByRaw("FIELD(status, 'pending', 'completed', 'skipped')")
+            ->orderByRaw("CASE status WHEN 'pending' THEN 1 WHEN 'completed' THEN 2 WHEN 'skipped' THEN 3 ELSE 4 END")
             ->orderBy('opens_at', 'asc')
             ->get();
     }
