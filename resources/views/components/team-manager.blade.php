@@ -48,7 +48,8 @@ new class extends Component
 };
 ?>
 
-<section class="w-full">
+    <!-- Added wire:poll.10s here to refresh the roster every 10 seconds -->
+<section class="w-full" wire:poll.10s>
     @if (! Auth::user()->team_id)
         <flux:card class="max-w-xl mx-auto">
             <div class="space-y-6">
@@ -90,7 +91,8 @@ new class extends Component
                     </flux:table.columns>
 
                     <flux:table.rows>
-                        @foreach (Auth::user()->team->members as $member)
+                        {{-- Eager-load latestLocation on every poll --}}
+                        @foreach (Auth::user()->team->members()->with('latestLocation')->get() as $member)
                             @php
                                 $location = $member->latestLocation;
                             @endphp
@@ -103,7 +105,7 @@ new class extends Component
                                             @if ($location)
                                                 <span class="text-xs text-neutral-400 flex items-center gap-2">
                                                     <span>⚡ {{ round($location->speed ?? 0) }} mph</span>
-                                                    @if ($location->battery !== null)
+                                                    @if (! is_null($location->battery))
                                                         <span>• 🔋 {{ $location->battery }}%</span>
                                                     @endif
                                                 </span>
