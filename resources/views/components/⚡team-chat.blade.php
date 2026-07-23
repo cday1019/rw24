@@ -93,10 +93,12 @@ new class extends Component
 }; ?>
 
 <div wire:poll.5s class="flex flex-col h-full bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+    <!-- Channel Tabs -->
     <div class="flex border-b border-neutral-200 dark:border-zinc-800 p-1 bg-neutral-50 dark:bg-zinc-950">
-
         <button
+            wire:key="channel-tab-1"
             wire:click="setChannel(1)"
+            type="button"
             @class([
                 'flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-colors relative',
                 'bg-white dark:bg-zinc-800 shadow-sm text-neutral-900 dark:text-zinc-100' => $activeChannel === 1,
@@ -113,7 +115,9 @@ new class extends Component
         </button>
 
         <button
+            wire:key="channel-tab-2"
             wire:click="setChannel(2)"
+            type="button"
             @class([
                 'flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-colors relative overflow-hidden',
                 'bg-white dark:bg-zinc-800 shadow-sm text-neutral-900 dark:text-zinc-100' => $activeChannel === 2,
@@ -138,7 +142,9 @@ new class extends Component
         </button>
 
         <button
+            wire:key="channel-tab-3"
             wire:click="setChannel(3)"
+            type="button"
             @class([
                 'flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-colors',
                 'bg-white dark:bg-zinc-800 shadow-sm text-neutral-900 dark:text-zinc-100' => $activeChannel === 3,
@@ -155,22 +161,35 @@ new class extends Component
         </button>
     </div>
 
+    <!-- Messages Container with Smart Mobile Scroll -->
     <div
         x-data="{
-            scrollToBottom() {
-                $el.scrollTop = $el.scrollHeight;
+            scrollToBottom(force = false) {
+                $nextTick(() => {
+                    const isNearBottom = $el.scrollHeight - $el.scrollTop - $el.clientHeight < 120;
+                    if (force || isNearBottom) {
+                        $el.scrollTop = $el.scrollHeight;
+                    }
+                });
+            },
+            init() {
+                this.scrollToBottom(true);
+                const observer = new MutationObserver(() => this.scrollToBottom(false));
+                observer.observe($el, { childList: true, subtree: true });
             }
         }"
-        x-init="scrollToBottom()"
-        @message-sent.window="$nextTick(() => scrollToBottom())"
+        @message-sent.window="scrollToBottom(true)"
         class="flex-1 overflow-y-auto p-4 space-y-4 min-h-[300px] max-h-[500px]"
     >
         @foreach($this->messages as $message)
-            <div @class([
-                'flex flex-col',
-                'items-end' => $message->user_id === auth()->id(),
-                'items-start' => $message->user_id !== auth()->id(),
-            ])>
+            <div
+                wire:key="msg-{{ $message->id }}"
+                @class([
+                    'flex flex-col',
+                    'items-end' => $message->user_id === auth()->id(),
+                    'items-start' => $message->user_id !== auth()->id(),
+                ])
+            >
                 <div class="flex items-center gap-2 mb-1">
                     <span class="text-xs font-semibold text-neutral-500 dark:text-zinc-400">
                         {{ $message->user->name }}
@@ -207,11 +226,13 @@ new class extends Component
         @endif
     </div>
 
-    <div class="p-4 border-t border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50">
+    <!-- Input Form (Protected against DOM morphing focus loss) -->
+    <div wire:ignore.self class="p-4 border-t border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50">
         <form wire:submit="sendMessage" class="flex gap-2">
             <div class="flex-1">
                 <flux:input
                     wire:model="body"
+                    wire:key="chat-body-input"
                     placeholder="Type a message..."
                     autocomplete="off"
                     class="!bg-white dark:!bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500"
