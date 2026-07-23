@@ -12,8 +12,9 @@ new class extends Component
     public array $teammateLocations = [];
     public array $routePaths = [];
     public array $checkpoints = [];
+    public ?int $teamId = null;
 
-    #[On('echo-private:team.{user.team_id},LocationUpdated')]
+    #[On('echo-private:team.{teamId},LocationUpdated')]
     public function handleLocationUpdated($event)
     {
         $updatedLoc = $event['locationData'];
@@ -30,6 +31,7 @@ new class extends Component
 
     public function mount()
     {
+        $this->teamId = Auth::user()?->team_id;
         $this->updateLocations();
         $this->loadRouteData();
     }
