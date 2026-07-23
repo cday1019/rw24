@@ -12,11 +12,11 @@
         <flux:card class="bg-zinc-900 border-indigo-500/30">
             <div class="space-y-3">
                 <div class="flex items-center justify-between">
-                    <flux:heading size="lg" class="text-indigo-400">Your Connection URL</flux:heading>
-                    <flux:badge color="indigo" size="sm">Step 2 Requirement</flux:badge>
+                    <flux:heading size="lg" class="text-indigo-400">1. Copy Endpoint URL</flux:heading>
+                    <flux:badge color="indigo" size="sm">Required for Step 3</flux:badge>
                 </div>
                 <p class="text-sm text-neutral-300">
-                    You'll need to paste this URL into the OwnTracks app in Step 2:
+                    Tap the button below to copy your unique location endpoint URL:
                 </p>
                 <div class="flex items-center gap-2 pt-1">
                     <flux:input readonly value="{{ request()->schemeAndHttpHost() }}/api/location" id="endpoint-url" class="font-mono text-sm bg-zinc-950 text-emerald-400 font-bold" />
@@ -27,11 +27,11 @@
             </div>
         </flux:card>
 
-        <!-- Step 1: Download -->
+        <!-- Step 2: Download -->
         <flux:card>
             <div class="space-y-3">
-                <flux:heading size="lg">Step 1: Download the App</flux:heading>
-                <p class="text-sm text-neutral-300">Download the free, open-source OwnTracks app for your phone:</p>
+                <flux:heading size="lg">2. Install the App</flux:heading>
+                <p class="text-sm text-neutral-300">Download the official free app on your phone:</p>
                 <div class="flex flex-wrap gap-3 pt-2">
                     <flux:button href="https://apps.apple.com/us/app/owntracks/id989222396" target="_blank" variant="subtle" icon="arrow-top-right-on-square">
                         iPhone / iOS App Store
@@ -43,80 +43,100 @@
             </div>
         </flux:card>
 
-        <!-- Step 2: Configure App -->
+        <!-- Step 3: Exact Screen Settings -->
         <flux:card>
             <div class="space-y-4">
-                <flux:heading size="lg">Step 2: Configure Settings (Critical)</flux:heading>
-
+                <flux:heading size="lg">3. Configure App Settings</flux:heading>
                 <p class="text-sm text-neutral-300">
-                    By default, OwnTracks looks for a private server. You must switch it to <strong>HTTP mode</strong>:
+                    Open OwnTracks, tap <strong>(i) Status Info</strong> (top left), then tap <strong>Settings</strong> and match these exact values:
                 </p>
 
-                <!-- iOS vs Android Toggle / Tabs -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                    <!-- iOS Instructions -->
-                    <div class="p-4 rounded-xl bg-zinc-800/60 border border-zinc-700/60 space-y-2 text-sm">
-                        <div class="font-bold text-white flex items-center gap-2">
-                            <span>🍎 Apple / iPhone (iOS)</span>
+                    <!-- iOS Screen Fields -->
+                    <div class="p-4 rounded-xl bg-zinc-800/60 border border-zinc-700/60 space-y-3 text-sm">
+                        <div class="font-bold text-white flex items-center gap-2 border-b border-zinc-700 pb-2">
+                            <span>🍎 iPhone / iOS Settings Screen</span>
                         </div>
-                        <ol class="list-decimal list-inside space-y-1.5 text-neutral-300">
-                            <li>Open OwnTracks & tap <strong>(i) Settings</strong> in the top left.</li>
-                            <li>Tap <strong>Settings</strong> $\rightarrow$ <strong>Mode</strong>.</li>
-                            <li>Select <strong>HTTP</strong> (not MQTT).</li>
-                            <li>Go back to Settings & tap <strong>HTTP</strong>.</li>
-                            <li>Paste the copied URL into the <strong>URL</strong> field.</li>
-                            <li>Set <strong>Tracker ID</strong> to your 2-letter initials (e.g. <code class="text-indigo-300 font-mono">KH</code>).</li>
-                        </ol>
+                        <ul class="space-y-2 text-neutral-300 font-mono text-xs">
+                            <li class="flex justify-between items-center bg-zinc-900/80 p-2 rounded">
+                                <span class="text-neutral-400">Mode:</span>
+                                <span class="text-emerald-400 font-bold">HTTP</span>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-900/80 p-2 rounded">
+                                <span class="text-neutral-400">UserID:</span>
+                                <span class="text-indigo-300 font-bold">First Name Lowercase (e.g. chad)</span>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-900/80 p-2 rounded">
+                                <span class="text-neutral-400">TrackerID:</span>
+                                <span class="text-indigo-300 font-bold">Your Initials (e.g. CD)</span>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-900/80 p-2 rounded">
+                                <span class="text-neutral-400">TLS:</span>
+                                <span class="text-emerald-400 font-bold">ON (Green Switch)</span>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-900/80 p-2 rounded">
+                                <span class="text-neutral-400">Authentication:</span>
+                                <span class="text-amber-400 font-bold">OFF</span>
+                            </li>
+                            <li class="bg-zinc-900/80 p-2 rounded space-y-1">
+                                <span class="text-neutral-400 block">URL Field (at bottom):</span>
+                                <span class="text-emerald-400 font-bold break-all block">{{ request()->schemeAndHttpHost() }}/api/location</span>
+                            </li>
+                        </ul>
                     </div>
 
-                    <!-- Android Instructions -->
-                    <div class="p-4 rounded-xl bg-zinc-800/60 border border-zinc-700/60 space-y-2 text-sm">
-                        <div class="font-bold text-white flex items-center gap-2">
-                            <span>🤖 Android</span>
+                    <!-- Android Screen Fields -->
+                    <div class="p-4 rounded-xl bg-zinc-800/60 border border-zinc-700/60 space-y-3 text-sm">
+                        <div class="font-bold text-white flex items-center gap-2 border-b border-zinc-700 pb-2">
+                            <span>🤖 Android Settings Screen</span>
                         </div>
-                        <ol class="list-decimal list-inside space-y-1.5 text-neutral-300">
-                            <li>Open OwnTracks & tap ☰ <strong>Menu</strong> $\rightarrow$ <strong>Preferences</strong>.</li>
-                            <li>Tap <strong>Connection</strong> $\rightarrow$ <strong>Mode</strong>.</li>
-                            <li>Select <strong>HTTP Private</strong>.</li>
-                            <li>Tap <strong>Host</strong> / <strong>Endpoint URL</strong>.</li>
-                            <li>Paste the copied URL into the field.</li>
-                            <li>Set <strong>Tracker ID</strong> to your 2-letter initials (e.g. <code class="text-indigo-300 font-mono">KH</code>).</li>
-                        </ol>
+                        <p class="text-xs text-neutral-400">Menu ➔ Preferences ➔ Connection:</p>
+                        <ul class="space-y-2 text-neutral-300 font-mono text-xs">
+                            <li class="flex justify-between items-center bg-zinc-900/80 p-2 rounded">
+                                <span class="text-neutral-400">Mode:</span>
+                                <span class="text-emerald-400 font-bold">HTTP Private</span>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-900/80 p-2 rounded">
+                                <span class="text-neutral-400">Username / UserID:</span>
+                                <span class="text-indigo-300 font-bold">First Name Lowercase (e.g. kyle)</span>
+                            </li>
+                            <li class="flex justify-between items-center bg-zinc-900/80 p-2 rounded">
+                                <span class="text-neutral-400">Tracker ID:</span>
+                                <span class="text-indigo-300 font-bold">Your Initials (e.g. KH)</span>
+                            </li>
+                            <li class="bg-zinc-900/80 p-2 rounded space-y-1">
+                                <span class="text-neutral-400 block">Host / Endpoint URL:</span>
+                                <span class="text-emerald-400 font-bold break-all block">{{ request()->schemeAndHttpHost() }}/api/location</span>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </flux:card>
 
-        <!-- Step 3: Permissions -->
+        <!-- Step 4: Background Permissions -->
         <flux:card class="border-amber-500/30">
             <div class="space-y-3">
-                <flux:heading size="lg" class="text-amber-400">Step 3: Enable Background Tracking</flux:heading>
+                <flux:heading size="lg" class="text-amber-400">4. Allow Location in Background</flux:heading>
                 <p class="text-sm text-neutral-300">
-                    If you don't grant background permissions, your phone will stop sending location updates the moment your screen turns off!
+                    To keep tracking active while your phone is in your pocket during the race:
                 </p>
-                <ul class="list-disc list-inside space-y-2 text-sm text-neutral-300">
-                    <li>
-                        <strong>Location Access:</strong> Set to <span class="text-white font-bold">"Always Allow"</span> (not "While Using App").
-                    </li>
-                    <li>
-                        <strong>Precise Location:</strong> Ensure <span class="text-white font-bold">"Precise Location"</span> or <span class="text-white font-bold">"High Accuracy"</span> is turned <strong>ON</strong>.
-                    </li>
-                    <li>
-                        <strong>Battery Optimization (Android):</strong> Exclude OwnTracks from "Battery Saver" or "App Optimization" so Android doesn't kill it in the background.
-                    </li>
+                <ul class="list-disc list-inside space-y-1.5 text-sm text-neutral-300">
+                    <li>Go to your phone's main <strong>Settings ➔ OwnTracks ➔ Location</strong>.</li>
+                    <li>Change permission from "While Using App" to <strong class="text-white">"Always Allow"</strong>.</li>
+                    <li>Ensure <strong class="text-white">"Precise Location"</strong> is turned <strong>ON</strong>.</li>
                 </ul>
             </div>
         </flux:card>
 
-        <!-- Step 4: Verification -->
+        <!-- Step 5: Test Ping -->
         <flux:card>
             <div class="space-y-3">
-                <flux:heading size="lg">Step 4: Send Test Ping</flux:heading>
+                <flux:heading size="lg">5. Test Connection</flux:heading>
                 <ol class="list-decimal list-inside space-y-2 text-sm text-neutral-300">
-                    <li>In OwnTracks, return to the main map screen.</li>
-                    <li>Tap the <strong>Upload/Publish arrow</strong> icon (top right corner) to send a location ping.</li>
-                    <li>Open <strong>(i) Status / Info</strong> in the app. Look for <span class="text-emerald-400 font-bold">HTTP 200</span>.</li>
-                    <li>If you see <strong>200 OK</strong>, you're officially tracking on the race map! 🎉</li>
+                    <li>Go back to the main OwnTracks screen.</li>
+                    <li>Tap the <strong>Upload/Publish arrow</strong> icon in the top right corner.</li>
+                    <li>Go to <strong>(i) Status Info</strong>. Verify <strong>HTTP Response</strong> shows <span class="text-emerald-400 font-bold">200 OK</span>.</li>
                 </ol>
             </div>
         </flux:card>
