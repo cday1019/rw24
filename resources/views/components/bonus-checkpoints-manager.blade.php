@@ -225,16 +225,19 @@ new class extends Component
         </flux:button>
     </div>
 
-    <!-- Active Window Map -->
+    <!-- Leaflet CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+    <!-- Active Window Map -->
     <flux:card class="bg-zinc-900/90 border-zinc-800 p-4">
         <div
             x-data="{
                 map: null,
                 checkpoints: @js($this->mapCheckpoints),
                 initMap() {
+                    if (typeof L === 'undefined') return;
+
                     // Centered on Riverwest neighborhood (43.0682, -87.9048)
                     this.map = L.map(this.$refs.mapElement).setView([43.0682, -87.9048], 14);
 
@@ -247,205 +250,199 @@ new class extends Component
                 },
                 plotMarkers() {
                     this.checkpoints.forEach(cp => {
-                        let color = cp.status === 'open' ? '#10b981' : (cp.status === 'upcoming' ? '#f59e0b' : '#6b7280');
-                        let iconHtml = `<div style="background-color: ${color}; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 8px ${color};"></div>`;
+                        var color = cp.status === 'open' ? '#10b981' : (cp.status === 'upcoming' ? '#f59e0b' : '#6b7280');
+                        var iconHtml = '<div style=&quot;background-color: ' + color + '; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 8px ' + color + ';&quot;></div>';
 
-let customIcon = L.divIcon({
-html: iconHtml,
-className: '',
-iconSize: [16, 16],
-iconAnchor: [8, 8]
-});
+                        var customIcon = L.divIcon({
+                            html: iconHtml,
+                            className: '',
+                            iconSize: [16, 16],
+                            iconAnchor: [8, 8]
+                        });
 
-let popupContent = `
-<div class="p-1 text-zinc-900 font-sans">
-    <strong style="font-size: 14px;">${cp.name}</strong><br>
-    <span style="font-size: 12px; color: #555;">📍 ${cp.location || 'See Map'}</span><br>
-    <span style="font-size: 11px; font-weight: bold; color: ${color};">⏰ ${cp.window} (+${cp.points} pts)</span>
-</div>
-`;
+                        var popupContent = '<div class=&quot;p-1 text-zinc-900 font-sans&quot;><strong style=&quot;font-size: 14px;&quot;>' + cp.name + '</strong><br><span style=&quot;font-size: 12px; color: #555;&quot;>📍 ' + (cp.location || 'See Map') + '</span><br><span style=&quot;font-size: 11px; font-weight: bold; color: ' + color + ';&quot;>⏰ ' + cp.window + ' (+' + cp.points + ' pts)</span></div>';
 
-L.marker([cp.lat, cp.lng], { icon: customIcon })
-.addTo(this.map)
-.bindPopup(popupContent);
-});
-}
-}"
-x-init="initMap()"
-class="w-full space-y-3"
->
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-    <div>
-        <flux:heading size="sm" class="text-white">Active & Upcoming Map Window</flux:heading>
-        <p class="text-xs text-zinc-400">Showing checkpoints open now, opening in < 2h, or closed < 2h ago</p>
-    </div>
-    <div class="flex items-center gap-3 text-xs font-mono">
-        <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-emerald-500"></span> Open Now</span>
-        <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-amber-500"></span> Opens <2h</span>
-        <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-zinc-500"></span> Closed <2h</span>
-    </div>
-</div>
+                        L.marker([cp.lat, cp.lng], { icon: customIcon })
+                            .addTo(this.map)
+                            .bindPopup(popupContent);
+                    });
+                }
+            }"
+            x-init="initMap()"
+            class="w-full space-y-3"
+        >
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                    <flux:heading size="sm" class="text-white">Active & Upcoming Map Window</flux:heading>
+                    <p class="text-xs text-zinc-400">Showing checkpoints open now, opening in &lt; 2h, or closed &lt; 2h ago</p>
+                </div>
+                <div class="flex items-center gap-3 text-xs font-mono">
+                    <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-emerald-500"></span> Open Now</span>
+                    <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-amber-500"></span> Opens &lt;2h</span>
+                    <span class="flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-zinc-500"></span> Closed &lt;2h</span>
+                </div>
+            </div>
 
-<div x-ref="mapElement" class="w-full h-80 rounded-lg border border-zinc-800 z-0"></div>
-</div>
-</flux:card>
+            <div x-ref="mapElement" class="w-full h-80 rounded-lg border border-zinc-800 z-0"></div>
+        </div>
+    </flux:card>
 
-<!-- Checkpoint List Table -->
-<flux:card class="bg-zinc-900/90 border-zinc-800">
-    <div class="space-y-4">
-        <flux:table>
-            <flux:table.columns>
-                <flux:table.column>{{ __('Checkpoint / Window') }}</flux:table.column>
-                <flux:table.column>{{ __('Location') }}</flux:table.column>
-                <flux:table.column>{{ __('Assigned Runner') }}</flux:table.column>
-                <flux:table.column>{{ __('Pts') }}</flux:table.column>
-                <flux:table.column>{{ __('Status / Action') }}</flux:table.column>
-            </flux:table.columns>
+    <!-- Checkpoint List Table -->
+    <flux:card class="bg-zinc-900/90 border-zinc-800">
+        <div class="space-y-4">
+            <flux:table>
+                <flux:table.columns>
+                    <flux:table.column>{{ __('Checkpoint / Window') }}</flux:table.column>
+                    <flux:table.column>{{ __('Location') }}</flux:table.column>
+                    <flux:table.column>{{ __('Assigned Runner') }}</flux:table.column>
+                    <flux:table.column>{{ __('Pts') }}</flux:table.column>
+                    <flux:table.column>{{ __('Status / Action') }}</flux:table.column>
+                </flux:table.columns>
 
-            <flux:table.rows>
-                @foreach ($this->checkpoints as $cp)
-                    @php
-                        $isOpen = $cp->isOpenNow();
-                        $isCompleted = $cp->status === 'completed';
-                        $isSkipped = $cp->status === 'skipped';
-                    @endphp
-                    <flux:table.row wire:key="cp-row-{{ $cp->id }}" @class([
+                <flux:table.rows>
+                    @foreach ($this->checkpoints as $cp)
+                        @php
+                            $isOpen = $cp->isOpenNow();
+                            $isCompleted = $cp->status === 'completed';
+                            $isSkipped = $cp->status === 'skipped';
+                        @endphp
+                        <flux:table.row wire:key="cp-row-{{ $cp->id }}" @class([
                             'opacity-60 bg-zinc-950/40' => $isSkipped,
                             'bg-emerald-950/20' => $isCompleted,
                         ])>
-                        <!-- Checkpoint Name & Window -->
-                        <flux:table.cell>
-                            <div class="flex flex-col gap-1">
-                                <div class="flex items-center gap-2">
-                                    <span class="font-bold text-white text-sm">{{ $cp->name }}</span>
-                                    @if($isOpen && ! $isCompleted && ! $isSkipped)
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 animate-pulse">
+                            <!-- Checkpoint Name & Window -->
+                            <flux:table.cell>
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-white text-sm">{{ $cp->name }}</span>
+                                        @if($isOpen && ! $isCompleted && ! $isSkipped)
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 animate-pulse">
                                                 <span class="size-1.5 rounded-full bg-emerald-400"></span> OPEN NOW
                                             </span>
-                                    @endif
-                                </div>
-                                @if($cp->opens_at || $cp->closes_at)
-                                    <span class="text-xs font-mono text-zinc-400">
+                                        @endif
+                                    </div>
+                                    @if($cp->opens_at || $cp->closes_at)
+                                        <span class="text-xs font-mono text-zinc-400">
                                             ⏰ {{ $cp->opens_at ? $cp->opens_at->format('D g:i A') : 'Anytime' }}
                                             - {{ $cp->closes_at ? $cp->closes_at->format('D g:i A') : 'End' }}
                                         </span>
-                                @endif
-                                @if($cp->notes)
-                                    <p class="text-xs text-zinc-500 italic mt-0.5">{{ $cp->notes }}</p>
-                                @endif
-                            </div>
-                        </flux:table.cell>
-
-                        <!-- Location -->
-                        <flux:table.cell>
-                            <span class="text-xs text-zinc-300">{{ $cp->location ?: 'See Official Map' }}</span>
-                        </flux:table.cell>
-
-                        <!-- Assigned Runner Dropdown -->
-                        <flux:table.cell>
-                            <flux:dropdown>
-                                <flux:button variant="subtle" size="sm" icon-trailing="chevron-down">
-                                    @if($cp->assignedUser)
-                                        <span class="text-xs text-indigo-300 font-semibold">🏃 {{ $cp->assignedUser->name }}</span>
-                                    @else
-                                        <span class="text-xs text-zinc-500">Unassigned</span>
                                     @endif
-                                </flux:button>
-                                <flux:menu>
-                                    <flux:menu.item wire:click="assignUser({{ $cp->id }}, null)">
-                                        Unassigned
-                                    </flux:menu.item>
-                                    @foreach($this->teamMembers as $member)
-                                        <flux:menu.item wire:click="assignUser({{ $cp->id }}, {{ $member->id }})">
-                                            🏃 {{ $member->name }}
+                                    @if($cp->notes)
+                                        <p class="text-xs text-zinc-500 italic mt-0.5">{{ $cp->notes }}</p>
+                                    @endif
+                                </div>
+                            </flux:table.cell>
+
+                            <!-- Location -->
+                            <flux:table.cell>
+                                <span class="text-xs text-zinc-300">{{ $cp->location ?: 'See Official Map' }}</span>
+                            </flux:table.cell>
+
+                            <!-- Assigned Runner Dropdown -->
+                            <flux:table.cell>
+                                <flux:dropdown>
+                                    <flux:button variant="subtle" size="sm" icon-trailing="chevron-down">
+                                        @if($cp->assignedUser)
+                                            <span class="text-xs text-indigo-300 font-semibold">🏃 {{ $cp->assignedUser->name }}</span>
+                                        @else
+                                            <span class="text-xs text-zinc-500">Unassigned</span>
+                                        @endif
+                                    </flux:button>
+                                    <flux:menu>
+                                        <flux:menu.item wire:click="assignUser({{ $cp->id }}, null)">
+                                            Unassigned
                                         </flux:menu.item>
-                                    @endforeach
-                                </flux:menu>
-                            </flux:dropdown>
-                        </flux:table.cell>
+                                        @foreach($this->teamMembers as $member)
+                                            <flux:menu.item wire:click="assignUser({{ $cp->id }}, {{ $member->id }})">
+                                                🏃 {{ $member->name }}
+                                            </flux:menu.item>
+                                        @endforeach
+                                    </flux:menu>
+                                </flux:dropdown>
+                            </flux:table.cell>
 
-                        <!-- Points -->
-                        <flux:table.cell>
-                            <span class="font-mono text-xs font-bold text-amber-400">+{{ $cp->points }}</span>
-                        </flux:table.cell>
+                            <!-- Points -->
+                            <flux:table.cell>
+                                <span class="font-mono text-xs font-bold text-amber-400">+{{ $cp->points }}</span>
+                            </flux:table.cell>
 
-                        <!-- Status Actions -->
-                        <flux:table.cell>
-                            <div class="flex items-center gap-1.5">
-                                @if($isCompleted)
-                                    <flux:badge variant="emerald" size="sm">✅ Stamped (+{{ $cp->points }} pts)</flux:badge>
-                                    <flux:button wire:click="updateStatus({{ $cp->id }}, 'pending')" variant="subtle" size="xs">
-                                        Reset
-                                    </flux:button>
-                                @elseif($isSkipped)
-                                    <flux:badge variant="neutral" size="sm">Skipped</flux:badge>
-                                    <flux:button wire:click="updateStatus({{ $cp->id }}, 'pending')" variant="subtle" size="xs">
-                                        Reset
-                                    </flux:button>
-                                @else
-                                    <flux:button wire:click="updateStatus({{ $cp->id }}, 'completed')" variant="primary" size="xs" icon="check">
-                                        Stamped
-                                    </flux:button>
-                                    <flux:button wire:click="updateStatus({{ $cp->id }}, 'skipped')" variant="danger" size="xs">
-                                        Skip
-                                    </flux:button>
-                                @endif
+                            <!-- Status Actions -->
+                            <flux:table.cell>
+                                <div class="flex items-center gap-1.5">
+                                    @if($isCompleted)
+                                        <flux:badge variant="emerald" size="sm">✅ Stamped (+{{ $cp->points }} pts)</flux:badge>
+                                        <flux:button wire:click="updateStatus({{ $cp->id }}, 'pending')" variant="subtle" size="xs">
+                                            Reset
+                                        </flux:button>
+                                    @elseif($isSkipped)
+                                        <flux:badge variant="neutral" size="sm">Skipped</flux:badge>
+                                        <flux:button wire:click="updateStatus({{ $cp->id }}, 'pending')" variant="subtle" size="xs">
+                                            Reset
+                                        </flux:button>
+                                    @else
+                                        <flux:button wire:click="updateStatus({{ $cp->id }}, 'completed')" variant="primary" size="xs" icon="check">
+                                            Stamped
+                                        </flux:button>
+                                        <flux:button wire:click="updateStatus({{ $cp->id }}, 'skipped')" variant="danger" size="xs">
+                                            Skip
+                                        </flux:button>
+                                    @endif
 
-                                <flux:button wire:click="openEditModal({{ $cp->id }})" variant="subtle" size="xs" icon="pencil" class="text-zinc-400 hover:text-indigo-400" />
-                                <flux:button wire:click="deleteCheckpoint({{ $cp->id }})" variant="subtle" size="xs" icon="trash" class="text-zinc-600 hover:text-red-400" />
-                            </div>
-                        </flux:table.cell>
-                    </flux:table.row>
+                                    <flux:button wire:click="openEditModal({{ $cp->id }})" variant="subtle" size="xs" icon="pencil" class="text-zinc-400 hover:text-indigo-400" />
+                                    <flux:button wire:click="deleteCheckpoint({{ $cp->id }})" variant="subtle" size="xs" icon="trash" class="text-zinc-600 hover:text-red-400" />
+                                </div>
+                            </flux:table.cell>
+                        </flux:table.row>
+                    @endforeach
+
+                    @if($this->checkpoints->isEmpty())
+                        <flux:table.row>
+                            <flux:table.cell colspan="5" class="text-center py-8 text-zinc-500 text-sm">
+                                No bonus checkpoints added yet. Click "Add Checkpoint" above to populate the race list!
+                            </flux:table.cell>
+                        </flux:table.row>
+                    @endif
+                </flux:table.rows>
+            </flux:table>
+        </div>
+    </flux:card>
+
+    <!-- Create / Edit Checkpoint Modal -->
+    <flux:modal wire:model="showModal" class="md:w-96 space-y-6">
+        <div>
+            <flux:heading size="lg">{{ $editingCheckpointId ? 'Edit Bonus Checkpoint' : 'Add Bonus Checkpoint' }}</flux:heading>
+            <flux:subheading>Enter details from the official RW24 bonus schedule.</flux:subheading>
+        </div>
+
+        <form wire:submit="saveCheckpoint" class="space-y-4">
+            <flux:input wire:model="name" label="Checkpoint Name" placeholder="e.g. Checkpoint #1: Pier Tattoo" required />
+            <flux:input wire:model="location" label="Location / Address" placeholder="e.g. Bremen & Wright St" />
+
+            <div class="grid grid-cols-2 gap-3">
+                <flux:input wire:model="latitude" label="Latitude" placeholder="43.0682" />
+                <flux:input wire:model="longitude" label="Longitude" placeholder="-87.9048" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <flux:input wire:model="opens_at" type="datetime-local" label="Opens At" />
+                <flux:input wire:model="closes_at" type="datetime-local" label="Closes At" />
+            </div>
+
+            <flux:input wire:model="points" type="number" min="1" label="Points Value" required />
+
+            <flux:select wire:model="assigned_user_id" label="Assigned Runner / Scout" placeholder="Select team member...">
+                <option value="">Unassigned</option>
+                @foreach($this->teamMembers as $member)
+                    <option value="{{ $member->id }}">{{ $member->name }}</option>
                 @endforeach
+            </flux:select>
 
-                @if($this->checkpoints->isEmpty())
-                    <flux:table.row>
-                        <flux:table.cell colspan="5" class="text-center py-8 text-zinc-500 text-sm">
-                            No bonus checkpoints added yet. Click "Add Checkpoint" above to populate the race list!
-                        </flux:table.cell>
-                    </flux:table.row>
-                @endif
-            </flux:table.rows>
-        </flux:table>
-    </div>
-</flux:card>
+            <flux:input wire:model="notes" label="Notes / Requirements" placeholder="e.g. Bring $5 cash, must eat hot dog" />
 
-<!-- Create / Edit Checkpoint Modal -->
-<flux:modal wire:model="showModal" class="md:w-96 space-y-6">
-    <div>
-        <flux:heading size="lg">{{ $editingCheckpointId ? 'Edit Bonus Checkpoint' : 'Add Bonus Checkpoint' }}</flux:heading>
-        <flux:subheading>Enter details from the official RW24 bonus schedule.</flux:subheading>
-    </div>
-
-    <form wire:submit="saveCheckpoint" class="space-y-4">
-        <flux:input wire:model="name" label="Checkpoint Name" placeholder="e.g. Checkpoint #1: Pier Tattoo" required />
-        <flux:input wire:model="location" label="Location / Address" placeholder="e.g. Bremen & Wright St" />
-
-        <div class="grid grid-cols-2 gap-3">
-            <flux:input wire:model="latitude" label="Latitude" placeholder="43.0682" />
-            <flux:input wire:model="longitude" label="Longitude" placeholder="-87.9048" />
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-            <flux:input wire:model="opens_at" type="datetime-local" label="Opens At" />
-            <flux:input wire:model="closes_at" type="datetime-local" label="Closes At" />
-        </div>
-
-        <flux:input wire:model="points" type="number" min="1" label="Points Value" required />
-
-        <flux:select wire:model="assigned_user_id" label="Assigned Runner / Scout" placeholder="Select team member...">
-            <option value="">Unassigned</option>
-            @foreach($this->teamMembers as $member)
-                <option value="{{ $member->id }}">{{ $member->name }}</option>
-            @endforeach
-        </flux:select>
-
-        <flux:input wire:model="notes" label="Notes / Requirements" placeholder="e.g. Bring $5 cash, must eat hot dog" />
-
-        <div class="flex justify-end gap-2 pt-2">
-            <flux:button wire:click="$set('showModal', false)" variant="subtle">Cancel</flux:button>
-            <flux:button type="submit" variant="primary">{{ $editingCheckpointId ? 'Update Checkpoint' : 'Add Checkpoint' }}</flux:button>
-        </div>
-    </form>
-</flux:modal>
+            <div class="flex justify-end gap-2 pt-2">
+                <flux:button wire:click="$set('showModal', false)" variant="subtle">Cancel</flux:button>
+                <flux:button type="submit" variant="primary">{{ $editingCheckpointId ? 'Update Checkpoint' : 'Add Checkpoint' }}</flux:button>
+            </div>
+        </form>
+    </flux:modal>
 </div>
