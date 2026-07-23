@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 new class extends Component
 {
     public bool $showModal = false;
+    public ?int $editingCheckpointId = null;
 
     // Form Fields
     public string $name = '';
@@ -57,12 +58,28 @@ new class extends Component
 
     public function openCreateModal(): void
     {
-        $this->reset(['name', 'location', 'opens_at', 'closes_at', 'points', 'assigned_user_id', 'notes']);
+        $this->reset(['editingCheckpointId', 'name', 'location', 'opens_at', 'closes_at', 'points', 'assigned_user_id', 'notes']);
         $this->points = 1;
         $this->showModal = true;
     }
 
-    public function createCheckpoint(): void
+    public function openEditModal(int $checkpointId): void
+    {
+        $checkpoint = BonusCheckpoint::where('team_id', Auth::user()->team_id)->findOrFail($checkpointId);
+
+        $this->editingCheckpointId = $checkpoint->id;
+        $this->name = $checkpoint->name;
+        $this->location = $checkpoint->location ?? '';
+        $this->opens_at = $checkpoint->opens_at ?? '';
+        $this->closes_at = $checkpoint->closes_at ?? '';
+        $this->points = $checkpoint->points;
+        $this->assigned_user_id = $checkpoint->assigned_user_id;
+        $this->notes = $checkpoint->notes ?? '';
+
+        $this->showModal = true;
+    }
+
+    public function saveCheckpoint(): void
     {
         $this->validate([
             'name' => 'required|string|max:255',
@@ -74,22 +91,39 @@ new class extends Component
             'notes' => 'nullable|string|max:500',
         ]);
 
-        BonusCheckpoint::create([
-            'team_id' => Auth::user()->team_id,
-            'name' => $this->name,
-            'location' => $this->location,
-            'opens_at' => $this->opens_at ?: null,
-            'closes_at' => $this->closes_at ?: null,
-            'points' => $this->points,
-            'assigned_user_id' => $this->assigned_user_id ?: null,
-            'notes' => $this->notes,
-            'status' => 'pending',
-        ]);
+        if ($this->editingCheckpointId) {
+            $checkpoint = BonusCheckpoint::where('team_id', Auth::user()->team_id)
+                ->findOrFail($this->editingCheckpointId);
+
+            $checkpoint->update([
+                'name' => $this->name,
+                'location' => $this->location,
+                'opens_at' => $this->opens_at ?: null,
+                'closes_at' => $this->closes_at ?: null,
+                'points' => $this->points,
+                'assigned_user_id' => $this->assigned_user_id ?: null,
+                'notes' => $this->notes,
+            ]);
+
+            Flux::toast(text: __('Bonus Checkpoint updated!'), variant: 'success');
+        } else {
+            BonusCheckpoint::create([
+                'team_id' => Auth::user()->team_id,
+                'name' => $this->name,
+                'location' => $this->location,
+                'opens_at' => $this->opens_at ?: null,
+                'closes_at' => $this->closes_at ?: null,
+                'points' => $this->points,
+                'assigned_user_id' => $this->assigned_user_id ?: null,
+                'notes' => $this->notes,
+                'status' => 'pending',
+            ]);
+
+            Flux::toast(text: __('Bonus Checkpoint added!'), variant: 'success');
+        }
 
         $this->showModal = false;
         unset($this->checkpoints);
-
-        Flux::toast(text: __('Bonus Checkpoint added!'), variant: 'success');
     }
 
     public function updateStatus(int $checkpointId, string $status): void
@@ -227,7 +261,7 @@ new class extends Component
 
                             <!-- Status Actions -->
                             <flux:table.cell>
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-1.5">
                                     @if($isCompleted)
                                         <flux:badge variant="emerald" size="sm">✅ Stamped (+{{ $cp->points }} pts)</flux:badge>
                                         <flux:button wire:click="updateStatus({{ $cp->id }}, 'pending')" variant="subtle" size="xs">
@@ -247,6 +281,7 @@ new class extends Component
                                         </flux:button>
                                     @endif
 
+                                    <flux:button wire:click="openEditModal({{ $cp->id }})" variant="subtle" size="xs" icon="pencil" class="text-zinc-400 hover:text-indigo-400" />
                                     <flux:button wire:click="deleteCheckpoint({{ $cp->id }})" variant="subtle" size="xs" icon="trash" class="text-zinc-600 hover:text-red-400" />
                                 </div>
                             </flux:table.cell>
@@ -265,14 +300,14 @@ new class extends Component
         </div>
     </flux:card>
 
-    <!-- Create Checkpoint Modal -->
+    <!-- Create / Edit Checkpoint Modal -->
     <flux:modal wire:model="showModal" class="md:w-96 space-y-6">
         <div>
-            <flux:heading size="lg">Add Bonus Checkpoint</flux:heading>
+            <flux:heading size="lg">{{ $editingCheckpointId ? 'Edit Bonus Checkpoint' : 'Add Bonus Checkpoint' }}</flux:heading>
             <flux:subheading>Enter details from the official RW24 bonus schedule.</flux:subheading>
         </div>
 
-        <form wire:submit="createCheckpoint" class="space-y-4">
+        <form wire:submit="saveCheckpoint" class="space-y-4">
             <flux:input wire:model="name" label="Checkpoint Name" placeholder="e.g. Checkpoint #1: Pier Tattoo" required />
             <flux:input wire:model="location" label="Location / Address" placeholder="e.g. Bremen & Wright St" />
 
@@ -294,7 +329,7 @@ new class extends Component
 
             <div class="flex justify-end gap-2 pt-2">
                 <flux:button wire:click="$set('showModal', false)" variant="subtle">Cancel</flux:button>
-                <flux:button type="submit" variant="primary">Add Checkpoint</flux:button>
+                <flux:button type="submit" variant="primary">{{ $editingCheckpointId ? 'Update Checkpoint' : 'Add Checkpoint' }}</flux:button>
             </div>
         </form>
     </flux:modal>
