@@ -8,7 +8,7 @@
             </flux:subheading>
         </div>
 
-        <!-- Copyable Endpoint Card -->
+        <!-- Step 1: Copy Endpoint Card -->
         <flux:card class="bg-zinc-900 border-indigo-500/30">
             <div class="space-y-3">
                 <div class="flex items-center justify-between">
@@ -19,7 +19,7 @@
                     Tap the button below to copy your unique location endpoint URL:
                 </p>
                 <div class="flex items-center gap-2 pt-1">
-                    <flux:input readonly value="{{ request()->schemeAndHttpHost() }}/api/location" id="endpoint-url" class="font-mono text-sm bg-zinc-950 text-emerald-400 font-bold" />
+                    <flux:input readonly value="{{ request()->schemeAndHttpHost() }}/api/locations-webhook" id="endpoint-url" class="font-mono text-sm bg-zinc-950 text-emerald-400 font-bold" />
                     <flux:button icon="clipboard" variant="primary" onclick="navigator.clipboard.writeText(document.getElementById('endpoint-url').value); alert('URL copied to clipboard!');">
                         Copy URL
                     </flux:button>
@@ -27,18 +27,27 @@
             </div>
         </flux:card>
 
-        <!-- Step 2: Download -->
+        <!-- Step 2: Download & Initial Permissions -->
         <flux:card>
-            <div class="space-y-3">
-                <flux:heading size="lg">2. Install the App</flux:heading>
+            <div class="space-y-4">
+                <flux:heading size="lg">2. Install App & Allow ALL Permissions</flux:heading>
                 <p class="text-sm text-neutral-300">Download the official free app on your phone:</p>
-                <div class="flex flex-wrap gap-3 pt-2">
+                <div class="flex flex-wrap gap-3 pt-1">
                     <flux:button href="https://apps.apple.com/us/app/owntracks/id989222396" target="_blank" variant="subtle" icon="arrow-top-right-on-square">
                         iPhone / iOS App Store
                     </flux:button>
                     <flux:button href="https://play.google.com/store/apps/details?id=org.owntracks.android" target="_blank" variant="subtle" icon="arrow-top-right-on-square">
                         Android / Google Play Store
                     </flux:button>
+                </div>
+
+                <div class="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-1.5 text-sm">
+                    <div class="font-bold text-amber-400 flex items-center gap-2">
+                        ⚠️ Important First-Launch Step:
+                    </div>
+                    <p class="text-neutral-300">
+                        When you open OwnTracks for the first time, <strong>accept / allow all permissions it requests</strong> (Location, Motion & Fitness, Notifications, and Local Network).
+                    </p>
                 </div>
             </div>
         </flux:card>
@@ -68,7 +77,7 @@
                             </li>
                             <li class="flex justify-between items-center bg-zinc-900/80 p-2 rounded">
                                 <span class="text-neutral-400">TrackerID:</span>
-                                <span class="text-indigo-300 font-bold">Your Initials (e.g. CD)</span>
+                                <span class="text-indigo-300 font-bold">Initials UPPERCASE (e.g. CD)</span>
                             </li>
                             <li class="flex justify-between items-center bg-zinc-900/80 p-2 rounded">
                                 <span class="text-neutral-400">TLS:</span>
@@ -80,7 +89,7 @@
                             </li>
                             <li class="bg-zinc-900/80 p-2 rounded space-y-1">
                                 <span class="text-neutral-400 block">URL Field (at bottom):</span>
-                                <span class="text-emerald-400 font-bold break-all block">{{ request()->schemeAndHttpHost() }}/api/location</span>
+                                <span class="text-emerald-400 font-bold break-all block">{{ request()->schemeAndHttpHost() }}/api/locations-webhook</span>
                             </li>
                         </ul>
                     </div>
@@ -102,11 +111,11 @@
                             </li>
                             <li class="flex justify-between items-center bg-zinc-900/80 p-2 rounded">
                                 <span class="text-neutral-400">Tracker ID:</span>
-                                <span class="text-indigo-300 font-bold">Your Initials (e.g. KH)</span>
+                                <span class="text-indigo-300 font-bold">Initials UPPERCASE (e.g. KH)</span>
                             </li>
                             <li class="bg-zinc-900/80 p-2 rounded space-y-1">
                                 <span class="text-neutral-400 block">Host / Endpoint URL:</span>
-                                <span class="text-emerald-400 font-bold break-all block">{{ request()->schemeAndHttpHost() }}/api/location</span>
+                                <span class="text-emerald-400 font-bold break-all block">{{ request()->schemeAndHttpHost() }}/api/locations-webhook</span>
                             </li>
                         </ul>
                     </div>
@@ -117,13 +126,13 @@
         <!-- Step 4: Background Permissions -->
         <flux:card class="border-amber-500/30">
             <div class="space-y-3">
-                <flux:heading size="lg" class="text-amber-400">4. Allow Location in Background</flux:heading>
+                <flux:heading size="lg" class="text-amber-400">4. Set Location to "Always Allow"</flux:heading>
                 <p class="text-sm text-neutral-300">
-                    To keep tracking active while your phone is in your pocket during the race:
+                    To keep tracking active while your phone is locked or in your pocket during the race:
                 </p>
                 <ul class="list-disc list-inside space-y-1.5 text-sm text-neutral-300">
                     <li>Go to your phone's main <strong>Settings ➔ OwnTracks ➔ Location</strong>.</li>
-                    <li>Change permission from "While Using App" to <strong class="text-white">"Always Allow"</strong>.</li>
+                    <li>Change location permission to <strong class="text-white">"Always Allow"</strong>.</li>
                     <li>Ensure <strong class="text-white">"Precise Location"</strong> is turned <strong>ON</strong>.</li>
                 </ul>
             </div>
@@ -134,9 +143,9 @@
             <div class="space-y-3">
                 <flux:heading size="lg">5. Test Connection</flux:heading>
                 <ol class="list-decimal list-inside space-y-2 text-sm text-neutral-300">
-                    <li>Go back to the main OwnTracks screen.</li>
+                    <li>Go back to the main OwnTracks app screen.</li>
                     <li>Tap the <strong>Upload/Publish arrow</strong> icon in the top right corner.</li>
-                    <li>Go to <strong>(i) Status Info</strong>. Verify <strong>HTTP Response</strong> shows <span class="text-emerald-400 font-bold">200 OK</span>.</li>
+                    <li>Go to <strong>(i) Status Info</strong>. Verify <strong>HTTP Response</strong> displays <span class="text-emerald-400 font-bold">200 OK</span>.</li>
                 </ol>
             </div>
         </flux:card>
