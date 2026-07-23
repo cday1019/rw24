@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Livewire\Volt\Volt;
+
 
 //Route::view('/', 'welcome')->name('home');
 Route::redirect('/', '/dashboard')->name('home');
@@ -11,7 +11,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::middleware(['auth'])->group(function () {
-    Volt::route('/setup/owntracks', 'own-tracks-setup')->name('owntracks.setup');
+    Route::view('/setup/owntracks', 'owntracks-setup')->name('owntracks.setup');
 });
 
 require __DIR__.'/settings.php';
