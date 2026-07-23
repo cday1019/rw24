@@ -19,7 +19,7 @@ Route::get('/playbook', function () {
 })->middleware(['auth'])->name('playbook');
 
 Route::get('/bonus-checkpoints', function () {
-    return view('components.⚡bonus-checkpoints-manager');
+    return view('bonus-checkpoints');
 })->middleware(['auth'])->name('bonus.checkpoints');
 
 require __DIR__.'/settings.php';
