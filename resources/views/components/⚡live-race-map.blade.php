@@ -145,6 +145,7 @@ new class extends Component
         }
 
         $now = now();
+        $oneHourFromNow = now()->addHour();
 
         $this->openBonusCheckpoints = BonusCheckpoint::query()
             ->where('team_id', $user->team_id)
@@ -152,12 +153,16 @@ new class extends Component
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->get()
-            ->filter(function (BonusCheckpoint $cp) use ($now) {
-                $hasOpened = ! $cp->opens_at || $cp->opens_at <= $now;
+            ->filter(function (BonusCheckpoint $cp) use ($now, $oneHourFromNow) {
+                // Check if already open OR opening within 1 hour
+                $hasOpenedOrOpeningSoon = ! $cp->opens_at || $cp->opens_at <= $oneHourFromNow;
                 $hasNotClosed = ! $cp->closes_at || $cp->closes_at >= $now;
-                return $hasOpened && $hasNotClosed;
+
+                return $hasOpenedOrOpeningSoon && $hasNotClosed;
             })
-            ->map(function (BonusCheckpoint $cp) {
+            ->map(function (BonusCheckpoint $cp) use ($now) {
+                $isOpenNow = (! $cp->opens_at || $cp->opens_at <= $now) && (! $cp->closes_at || $cp->closes_at >= $now);
+
                 $windowText = '';
                 if ($cp->opens_at || $cp->closes_at) {
                     $openStr = $cp->opens_at ? $cp->opens_at->format('g:i A') : 'Anytime';
@@ -166,13 +171,14 @@ new class extends Component
                 }
 
                 return [
-                    'id'       => $cp->id,
-                    'name'     => $cp->name,
-                    'location' => $cp->location,
-                    'points'   => $cp->points,
-                    'window'   => $windowText,
-                    'lat'      => (float) $cp->latitude,
-                    'lng'      => (float) $cp->longitude,
+                    'id'        => $cp->id,
+                    'name'      => $cp->name,
+                    'location'  => $cp->location,
+                    'points'    => $cp->points,
+                    'window'    => $windowText,
+                    'isOpenNow' => $isOpenNow,
+                    'lat'       => (float) $cp->latitude,
+                    'lng'       => (float) $cp->longitude,
                 ];
             })
             ->values()
@@ -307,6 +313,7 @@ new class extends Component
 
                     // Render open bonus checkpoint markers
                     this.bonusCheckpoints.forEach((cp, index) => {
+                        // Multi-line formatting: Name on line 1, Time window on line 2
                         const labelText = cp.window ? `${cp.name}\n${cp.window}` : cp.name;
 
                         const marker = new google.maps.Marker({
@@ -316,17 +323,17 @@ new class extends Component
                             zIndex: 100 + index, // Stack neatly above base map elements
                             icon: {
                                 path: 'M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20C24 5.37 18.63 0 12 0z',
-                                fillColor: '#F59E0B',
+                                fillColor: cp.isOpenNow ? '#F59E0B' : '#38BDF8', // Amber if Open Now, Cyan if Opening Soon
                                 fillOpacity: 1,
                                 strokeColor: '#FFFFFF',
                                 strokeWeight: 1.5,
                                 scale: 0.8,
                                 anchor: new google.maps.Point(12, 32),
-                                labelOrigin: new google.maps.Point(12, -22) // Lifted cleanly above pin tip
+                                labelOrigin: new google.maps.Point(12, -22)
                             },
                             label: {
                                 text: labelText,
-                                color: '#FFFFFF', // High-contrast white title
+                                color: '#FFFFFF',
                                 fontSize: '11px',
                                 fontWeight: 'bold',
                                 className: 'bonus-map-badge'
@@ -340,11 +347,16 @@ new class extends Component
 
                         marker.addListener('click', () => {
                             marker.setZIndex(9999);
+
+                            const statusHtml = cp.isOpenNow
+                                ? `<span style="color: #10b981; font-size: 10px; font-weight: 700;">● OPEN NOW</span>`
+                                : `<span style="color: #38bdf8; font-size: 10px; font-weight: 700;">⏱ OPENS IN < 1 HR</span>`;
+
                             const popupContent = `
                                 <div style="background-color: #18181b; color: #f4f4f5; padding: 14px; font-family: system-ui, -apple-system, sans-serif; min-width: 190px;">
                                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                                         <span style="background-color: #f59e0b; color: #000; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 9999px;">+${cp.points} PTS</span>
-                                        <span style="color: #10b981; font-size: 10px; font-weight: 700;">● OPEN NOW</span>
+                                        ${statusHtml}
                                     </div>
                                     <div style="font-weight: 700; font-size: 14px; color: #ffffff; margin-bottom: 2px;">${cp.name}</div>
                                     ${cp.window ? `<div style="font-size: 11px; color: #f59e0b; font-weight: 600; margin-bottom: 6px;">${cp.window}</div>` : ''}
