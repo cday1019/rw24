@@ -144,10 +144,10 @@ new class extends Component
             </div>
         </flux:card>
     @else
-        <flux:card>
+        <flux:card class="bg-zinc-900 border-zinc-800">
             <div class="space-y-6">
                 <div>
-                    <flux:heading size="lg">{{ __('Team Roster') }}</flux:heading>
+                    <flux:heading size="lg" class="text-white">{{ __('Team Roster') }}</flux:heading>
                     <flux:subheading>{{ __('Track who has the manifest, who is on deck, and team activity.') }}</flux:subheading>
                 </div>
 
@@ -162,28 +162,6 @@ new class extends Component
                             @php
                                 $location = $member->latestLocation;
                                 $hasManifest = in_array($member->status, ['riding_manifest', 'bonus_manifest']);
-
-                                $variant = match($member->status) {
-                                    'riding_manifest' => 'success',
-                                    'bonus_manifest'  => 'emerald',
-                                    'on_deck_next'    => 'warning',
-                                    'bonus_waiting'   => 'purple',
-                                    'riding_support'  => 'indigo',
-                                    'available'       => 'sky',
-                                    'off_duty'        => 'neutral',
-                                    default           => 'neutral',
-                                };
-
-                                $label = match($member->status) {
-                                    'riding_manifest' => '📜 Riding (Has Manifest)',
-                                    'bonus_manifest'  => '🎯 Bonus (Has Manifest)',
-                                    'on_deck_next'    => '⏱️ On Deck (Gets Manifest Next)',
-                                    'bonus_waiting'   => '⏳ Bonus (No Manifest)',
-                                    'riding_support'  => '🚲 Riding (Support)',
-                                    'available'       => '🙋 Available / Ready',
-                                    'off_duty'        => '⛺ Off Duty',
-                                    default           => '⛺ Off Duty',
-                                };
                             @endphp
                             <flux:table.row wire:key="roster-member-{{ $member->id }}">
                                 <flux:table.cell>
@@ -210,35 +188,20 @@ new class extends Component
                                     </div>
                                 </flux:table.cell>
                                 <flux:table.cell>
-                                    <flux:dropdown>
-                                        <flux:button variant="subtle" size="sm" icon-trailing="chevron-down">
-                                            <flux:badge :variant="$variant" size="sm" class="cursor-pointer">{{ $label }}</flux:badge>
-                                        </flux:button>
-
-                                        <flux:menu>
-                                            <flux:menu.item wire:click="updateStatus({{ $member->id }}, 'riding_manifest')">
-                                                📜 Riding (Has Manifest)
-                                            </flux:menu.item>
-                                            <flux:menu.item wire:click="updateStatus({{ $member->id }}, 'bonus_manifest')">
-                                                🎯 Bonus Checkpoint (Has Manifest)
-                                            </flux:menu.item>
-                                            <flux:menu.item wire:click="updateStatus({{ $member->id }}, 'on_deck_next')">
-                                                ⏱️ On Deck (Gets Manifest Next)
-                                            </flux:menu.item>
-                                            <flux:menu.item wire:click="updateStatus({{ $member->id }}, 'bonus_waiting')">
-                                                ⏳ Bonus Checkpoint (No Manifest / Waiting)
-                                            </flux:menu.item>
-                                            <flux:menu.item wire:click="updateStatus({{ $member->id }}, 'riding_support')">
-                                                🚲 Riding (Support / Wingman)
-                                            </flux:menu.item>
-                                            <flux:menu.item wire:click="updateStatus({{ $member->id }}, 'available')">
-                                                🙋 Available / Ready to Help
-                                            </flux:menu.item>
-                                            <flux:menu.item wire:click="updateStatus({{ $member->id }}, 'off_duty')">
-                                                ⛺ Off Duty
-                                            </flux:menu.item>
-                                        </flux:menu>
-                                    </flux:dropdown>
+                                    <!-- Mobile-Friendly Status Picker -->
+                                    <flux:select
+                                        wire:change="updateStatus({{ $member->id }}, $event.target.value)"
+                                        size="sm"
+                                        class="w-full min-w-[200px]"
+                                    >
+                                        <option value="riding_manifest" @selected($member->status === 'riding_manifest')>📜 Riding (Has Manifest)</option>
+                                        <option value="bonus_manifest" @selected($member->status === 'bonus_manifest')>🎯 Bonus (Has Manifest)</option>
+                                        <option value="on_deck_next" @selected($member->status === 'on_deck_next')>⏱️ On Deck (Gets Manifest Next)</option>
+                                        <option value="bonus_waiting" @selected($member->status === 'bonus_waiting')>⏳ Bonus (No Manifest)</option>
+                                        <option value="riding_support" @selected($member->status === 'riding_support')>🚲 Riding (Support)</option>
+                                        <option value="available" @selected($member->status === 'available')>🙋 Available / Ready</option>
+                                        <option value="off_duty" @selected($member->status === 'off_duty')>⛺ Off Duty</option>
+                                    </flux:select>
                                 </flux:table.cell>
                             </flux:table.row>
                         @endforeach
