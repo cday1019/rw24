@@ -101,5 +101,14 @@
 @endpersist
 
 @fluxScripts
+<script>
+    document.addEventListener('livewire:init', () => {
+        Livewire.hook('request', ({ fail }) => {
+            fail(({ status, content }) => {
+                alert('🚨 Livewire Error ' + status + ': ' + (status === 419 ? 'CSRF Token Expired (Refresh page)' : 'Check server logs'));
+            });
+        });
+    });
+</script>
 </body>
 </html>
