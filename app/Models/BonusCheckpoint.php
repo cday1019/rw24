@@ -20,6 +20,8 @@ class BonusCheckpoint extends Model
         'status',
         'assigned_user_id',
         'notes',
+        'latitude',
+        'longitude',
     ];
 
     /**
