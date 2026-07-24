@@ -13,6 +13,7 @@ new class extends Component
     public array $routePaths = [];
     public array $checkpoints = [];
     public array $openBonusCheckpoints = [];
+    public bool $showAllCheckpoints = false;
     public ?int $teamId = null;
 
     public function handleLocationUpdated($event)
@@ -23,6 +24,12 @@ new class extends Component
         $locations->put($updatedLoc['user_id'], $updatedLoc);
 
         $this->teammateLocations = $locations->values()->toArray();
+    }
+
+    public function toggleShowAllCheckpoints(): void
+    {
+        $this->showAllCheckpoints = ! $this->showAllCheckpoints;
+        $this->updateBonusCheckpoints();
     }
 
     public function mount()
@@ -95,9 +102,15 @@ new class extends Component
             ->map(function ($placemark) {
                 $coordsText = (string) $placemark->Point->coordinates;
                 $parts = explode(',', trim($coordsText));
+                $fullName = (string) $placemark->name;
+
+                // Extract checkpoint number (e.g. "Checkpoint 1" -> "1")
+                preg_match('/(\d+)/', $fullName, $matches);
+                $number = $matches[1] ?? $fullName;
 
                 return [
-                    'name' => (string) $placemark->name,
+                    'name' => $fullName,
+                    'number' => $number,
                     'lat' => (float) $parts[1],
                     'lng' => (float) $parts[0],
                 ];
@@ -154,7 +167,12 @@ new class extends Component
             ->whereNotNull('longitude')
             ->get()
             ->filter(function (BonusCheckpoint $cp) use ($now, $oneHourFromNow) {
-                // Check if already open OR opening within 1 hour
+                // If filter is toggled to show all, return true
+                if ($this->showAllCheckpoints) {
+                    return true;
+                }
+
+                // Default filter: Check if already open OR opening within 1 hour
                 $hasOpenedOrOpeningSoon = ! $cp->opens_at || $cp->opens_at <= $oneHourFromNow;
                 $hasNotClosed = ! $cp->closes_at || $cp->closes_at >= $now;
 
@@ -162,6 +180,10 @@ new class extends Component
             })
             ->map(function (BonusCheckpoint $cp) use ($now) {
                 $isOpenNow = (! $cp->opens_at || $cp->opens_at <= $now) && (! $cp->closes_at || $cp->closes_at >= $now);
+
+                // Extract checkpoint number from name (e.g. "Checkpoint #1: Shake Shake Shake Senora" -> "1")
+                preg_match('/(?:Checkpoint\s*#?|#)(\d+[a-z]?)/i', $cp->name, $matches);
+                $number = $matches[1] ?? '';
 
                 $windowText = '';
                 if ($cp->opens_at || $cp->closes_at) {
@@ -173,6 +195,7 @@ new class extends Component
                 return [
                     'id'        => $cp->id,
                     'name'      => $cp->name,
+                    'number'    => $number,
                     'location'  => $cp->location,
                     'points'    => $cp->points,
                     'window'    => $windowText,
@@ -210,6 +233,17 @@ new class extends Component
             right: 4px !important;
         }
     </style>
+
+    <!-- Floating Map Filter Bar -->
+    <div class="absolute top-3 left-3 z-10 flex items-center gap-2">
+        <button
+            wire:click="toggleShowAllCheckpoints"
+            type="button"
+            class="px-3 py-1.5 text-xs font-bold rounded-lg shadow-lg backdrop-blur-md border transition-all flex items-center gap-1.5 active:scale-95 {{ $showAllCheckpoints ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-zinc-900/90 text-zinc-300 border-zinc-700 hover:text-white' }}"
+        >
+            <span>📍 {{ $showAllCheckpoints ? 'Showing All Checkpoints' : 'Filter: Active & Opening Soon' }}</span>
+        </button>
+    </div>
 
     <div id="map" class="h-full w-full" wire:ignore></div>
 
@@ -308,7 +342,7 @@ new class extends Component
                     mapEl._checkpoints.forEach(m => m.setMap(null));
                     mapEl._checkpoints = [];
 
-                    // Render new route checkpoint markers
+                    // Render standard route checkpoints with numbers centered inside circles
                     this.checkpoints.forEach(cp => {
                         const marker = new google.maps.Marker({
                             position: { lat: cp.lat, lng: cp.lng },
@@ -320,23 +354,22 @@ new class extends Component
                                 fillOpacity: 1,
                                 strokeWeight: 2,
                                 strokeColor: 'white',
-                                scale: 6
+                                scale: 10
                             },
                             label: {
-                                text: cp.name,
-                                color: '#f4f4f5',
-                                fontSize: '10px',
-                                fontWeight: 'bold',
-                                className: 'mt-7'
+                                text: String(cp.number || ''),
+                                color: '#FFFFFF',
+                                fontSize: '11px',
+                                fontWeight: 'bold'
                             }
                         });
 
-                        // Tap popup card with direct navigation for standard route checkpoints
+                        // Tap popup card with direct navigation
                         marker.addListener('click', () => {
                             const popupContent = `
                                 <div style="background-color: #18181b; color: #f4f4f5; padding: 14px; font-family: system-ui, -apple-system, sans-serif; min-width: 180px;">
                                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                                        <span style="background-color: #ff007f; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 9999px;">CHECKPOINT</span>
+                                        <span style="background-color: #ff007f; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 9999px;">CHECKPOINT #${cp.number}</span>
                                     </div>
                                     <div style="font-weight: 700; font-size: 14px; color: #ffffff; margin-bottom: 12px;">${cp.name}</div>
                                     <a href="https://www.google.com/maps/search/?api=1&query=${cp.lat},${cp.lng}" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 6px; background-color: #27272a; color: #38bdf8; text-decoration: none; font-size: 11px; font-weight: 600; padding: 8px; border-radius: 8px; border: 1px solid #3f3f46;">
@@ -364,12 +397,11 @@ new class extends Component
                     mapEl._bonusMarkers.forEach(m => m.setMap(null));
                     mapEl._bonusMarkers = [];
 
-                    // Shared InfoWindow for tap popups
                     if (!mapEl._infoWindow) {
                         mapEl._infoWindow = new google.maps.InfoWindow();
                     }
 
-                    // Render open bonus checkpoint markers
+                    // Render open bonus checkpoint markers with numbers printed inside pin heads
                     this.bonusCheckpoints.forEach((cp, index) => {
                         const marker = new google.maps.Marker({
                             position: { lat: cp.lat, lng: cp.lng },
@@ -382,8 +414,15 @@ new class extends Component
                                 fillOpacity: 1,
                                 strokeColor: '#FFFFFF',
                                 strokeWeight: 2,
-                                scale: 1.1,
-                                anchor: new google.maps.Point(12, 32)
+                                scale: 1.25,
+                                anchor: new google.maps.Point(12, 32),
+                                labelOrigin: new google.maps.Point(12, 11) // Centers label inside pin head
+                            },
+                            label: {
+                                text: String(cp.number || ''),
+                                color: '#000000', // Black text for high contrast on Amber/Cyan
+                                fontSize: '10px',
+                                fontWeight: 'bold'
                             }
                         });
 
@@ -421,11 +460,9 @@ new class extends Component
                     const bounds = new google.maps.LatLngBounds();
                     let hasPoints = false;
 
-                    // Include Home Base
                     bounds.extend(this.homeBasePos);
                     hasPoints = true;
 
-                    // Zoom strictly to KML Route Paths & Checkpoints
                     this.routePaths.forEach(rp => {
                         rp.path.forEach(pos => {
                             bounds.extend(pos);
@@ -453,11 +490,9 @@ new class extends Component
                     const mapEl = document.getElementById('map');
                     if (!mapEl._riderMarkers) mapEl._riderMarkers = [];
 
-                    // Clear existing rider markers cleanly
                     mapEl._riderMarkers.forEach(marker => marker.setMap(null));
                     mapEl._riderMarkers = [];
 
-                    // Add new rider markers
                     this.locations.forEach(loc => {
                         const marker = new google.maps.Marker({
                             position: { lat: loc.lat, lng: loc.lng },
@@ -475,12 +510,10 @@ new class extends Component
             };
         }
 
-        // Safe Map Initialization (Prevents Fatal Alpine/Livewire JS Crash)
         function initMap() {
             const mapElement = document.getElementById("map");
             if (!mapElement) return;
 
-            // Wait until Alpine is initialized on mobile devices
             if (typeof window.Alpine === 'undefined') {
                 document.addEventListener('alpine:initialized', () => initMap(), { once: true });
                 return;
