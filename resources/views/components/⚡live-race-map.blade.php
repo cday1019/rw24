@@ -256,7 +256,7 @@ new class extends Component
                 routePaths: @js($routePaths),
                 checkpoints: @js($checkpoints),
                 bonusCheckpoints: @entangle('openBonusCheckpoints'),
-                homeBasePos: { lat: 43.06210376784992, lng: -87.9037624396661 },
+                homeBasePos: { lat: 43.06210, lng: -87.90376 },
                 map: null,
 
                 init() {
