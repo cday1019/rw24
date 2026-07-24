@@ -10,6 +10,29 @@
         <flux:sidebar.collapse class="lg:hidden" />
     </flux:sidebar.header>
 
+    <!-- Desktop Alpine Clock -->
+    <div class="px-3 py-1">
+        <div
+            x-data="{
+                time: '',
+                updateClock() {
+                    this.time = new Date().toLocaleTimeString('en-US', {
+                        timeZone: 'America/Chicago',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: true
+                    });
+                }
+            }"
+            x-init="updateClock(); setInterval(() => updateClock(), 1000)"
+            class="flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-mono font-semibold text-zinc-300 bg-zinc-800/80 border border-zinc-700/50 rounded-lg shadow-sm"
+        >
+            <span class="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span x-text="time">--:--:-- PM</span>
+        </div>
+    </div>
+
     <flux:sidebar.nav>
         <flux:sidebar.group :heading="__('Platform')" class="grid">
             <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
@@ -44,11 +67,32 @@
     <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
 </flux:sidebar>
 
-<!-- Mobile User Menu -->
+<!-- Mobile User Menu & Header -->
 <flux:header class="lg:hidden">
     <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
     <flux:spacer />
+
+    <!-- Mobile Alpine Clock -->
+    <div
+        x-data="{
+            time: '',
+            updateClock() {
+                this.time = new Date().toLocaleTimeString('en-US', {
+                    timeZone: 'America/Chicago',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                });
+            }
+        }"
+        x-init="updateClock(); setInterval(() => updateClock(), 1000)"
+        class="flex shrink-0 items-center gap-1.5 px-2.5 py-1 text-[11px] font-mono font-semibold text-zinc-300 bg-zinc-800/80 border border-zinc-700/50 rounded-md shadow-sm me-2 whitespace-nowrap"
+    >
+        <span class="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span x-text="time">--:--:-- PM</span>
+    </div>
 
     <flux:dropdown position="top" align="end">
         <flux:profile
