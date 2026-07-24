@@ -4,6 +4,7 @@
 use Livewire\Component;
 use Livewire\Attributes\Computed;
 use App\Models\TeamLocation;
+use App\Models\BonusCheckpoint;
 use Illuminate\Support\Facades\Auth;
 
 new class extends Component
@@ -11,6 +12,7 @@ new class extends Component
     public array $teammateLocations = [];
     public array $routePaths = [];
     public array $checkpoints = [];
+    public array $openBonusCheckpoints = [];
     public ?int $teamId = null;
 
     public function handleLocationUpdated($event)
@@ -26,8 +28,18 @@ new class extends Component
     public function mount()
     {
         $this->teamId = Auth::user()?->team_id;
-        $this->updateLocations();
         $this->loadRouteData();
+        $this->updateLocations();
+        $this->updateBonusCheckpoints();
+    }
+
+    /**
+     * Runs automatically before every render / wire:poll step
+     */
+    public function rendering()
+    {
+        $this->updateLocations();
+        $this->updateBonusCheckpoints();
     }
 
     public function getListeners()
@@ -78,7 +90,7 @@ new class extends Component
             })
             ->toArray();
 
-        // Extract Points for Checkpoints
+        // Extract Points for Route Checkpoints
         $this->checkpoints = collect($xml->xpath('//kml:Folder[kml:name="Checkpoints"]/kml:Placemark[kml:Point]'))
             ->map(function ($placemark) {
                 $coordsText = (string) $placemark->Point->coordinates;
@@ -122,17 +134,52 @@ new class extends Component
             ->values()
             ->toArray();
     }
+
+    public function updateBonusCheckpoints(): void
+    {
+        $user = Auth::user();
+
+        if (! $user || ! $user->team_id) {
+            $this->openBonusCheckpoints = [];
+            return;
+        }
+
+        $now = now();
+
+        $this->openBonusCheckpoints = BonusCheckpoint::query()
+            ->where('team_id', $user->team_id)
+            ->where('status', 'pending')
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->get()
+            ->filter(function (BonusCheckpoint $cp) use ($now) {
+                $hasOpened = ! $cp->opens_at || $cp->opens_at <= $now;
+                $hasNotClosed = ! $cp->closes_at || $cp->closes_at >= $now;
+                return $hasOpened && $hasNotClosed;
+            })
+            ->map(fn (BonusCheckpoint $cp) => [
+                'id'     => $cp->id,
+                'name'   => $cp->name,
+                'points' => $cp->points,
+                'lat'    => (float) $cp->latitude,
+                'lng'    => (float) $cp->longitude,
+            ])
+            ->values()
+            ->toArray();
+    }
 };
 ?>
 
-<div class="relative h-full w-full min-h-[400px] rounded-xl overflow-hidden"
+<div wire:poll.10s class="relative h-full w-full min-h-[400px] rounded-xl overflow-hidden"
      x-data="{
         locations: @entangle('teammateLocations'),
         routePaths: @js($routePaths),
         checkpoints: @js($checkpoints),
+        bonusCheckpoints: @entangle('openBonusCheckpoints'),
         map: null,
         init() {
             this.$watch('locations', () => this.updateMarkers());
+            this.$watch('bonusCheckpoints', () => this.renderBonusCheckpoints());
         },
         renderRoute() {
             if (!this.map) return;
@@ -161,7 +208,7 @@ new class extends Component
             mapEl._checkpoints.forEach(m => m.setMap(null));
             mapEl._checkpoints = [];
 
-            // Render new checkpoint markers
+            // Render new route checkpoint markers
             this.checkpoints.forEach(cp => {
                 const marker = new google.maps.Marker({
                     position: { lat: cp.lat, lng: cp.lng },
@@ -188,6 +235,40 @@ new class extends Component
 
             this.fitMapToRoute();
         },
+        renderBonusCheckpoints() {
+            if (!this.map) return;
+            const mapEl = document.getElementById('map');
+            if (!mapEl._bonusMarkers) mapEl._bonusMarkers = [];
+
+            // Clear existing bonus markers
+            mapEl._bonusMarkers.forEach(m => m.setMap(null));
+            mapEl._bonusMarkers = [];
+
+            // Render open bonus checkpoint markers
+            this.bonusCheckpoints.forEach(cp => {
+                const marker = new google.maps.Marker({
+                    position: { lat: cp.lat, lng: cp.lng },
+                    map: this.map,
+                    title: `${cp.name} (+${cp.points} pts)`,
+                    icon: {
+                        path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                        fillColor: '#F59E0B',
+                        fillOpacity: 1,
+                        strokeWeight: 2,
+                        strokeColor: '#FFFFFF',
+                        scale: 7
+                    },
+                    label: {
+                        text: `🎯 ${cp.name} (+${cp.points} pts)`,
+                        color: '#FBBF24',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        className: 'mt-8 bg-zinc-900/90 px-2 py-0.5 rounded border border-amber-500/50 shadow-md'
+                    }
+                });
+                mapEl._bonusMarkers.push(marker);
+            });
+        },
         fitMapToRoute() {
             if (!this.map) return;
             const bounds = new google.maps.LatLngBounds();
@@ -204,6 +285,12 @@ new class extends Component
             // Include Active Teammates
             this.locations.forEach(loc => {
                 bounds.extend({ lat: loc.lat, lng: loc.lng });
+                hasPoints = true;
+            });
+
+            // Include Open Bonus Checkpoints
+            this.bonusCheckpoints.forEach(cp => {
+                bounds.extend({ lat: cp.lat, lng: cp.lng });
                 hasPoints = true;
             });
 
@@ -274,6 +361,7 @@ new class extends Component
             data.map = map;
             data.renderRoute();
             data.updateMarkers();
+            data.renderBonusCheckpoints();
         }
     </script>
 </div>
