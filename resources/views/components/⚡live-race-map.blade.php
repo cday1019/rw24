@@ -252,6 +252,11 @@ new class extends Component
                         mapEl._polylines.push(polyline);
                     });
 
+                    // Shared InfoWindow for tap popups
+                    if (!mapEl._infoWindow) {
+                        mapEl._infoWindow = new google.maps.InfoWindow();
+                    }
+
                     // Clear existing checkpoint markers
                     mapEl._checkpoints.forEach(m => m.setMap(null));
                     mapEl._checkpoints = [];
@@ -268,7 +273,7 @@ new class extends Component
                                 fillOpacity: 1,
                                 strokeWeight: 2,
                                 strokeColor: 'white',
-                                scale: 5
+                                scale: 6
                             },
                             label: {
                                 text: cp.name,
@@ -278,6 +283,25 @@ new class extends Component
                                 className: 'mt-7'
                             }
                         });
+
+                        // Tap popup card with direct navigation for standard route checkpoints
+                        marker.addListener('click', () => {
+                            const popupContent = `
+                                <div style="background-color: #18181b; color: #f4f4f5; padding: 14px; font-family: system-ui, -apple-system, sans-serif; min-width: 180px;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                        <span style="background-color: #ff007f; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 9999px;">CHECKPOINT</span>
+                                    </div>
+                                    <div style="font-weight: 700; font-size: 14px; color: #ffffff; margin-bottom: 12px;">${cp.name}</div>
+                                    <a href="https://www.google.com/maps/search/?api=1&query=${cp.lat},${cp.lng}" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 6px; background-color: #27272a; color: #38bdf8; text-decoration: none; font-size: 11px; font-weight: 600; padding: 8px; border-radius: 8px; border: 1px solid #3f3f46;">
+                                        🗺️ Open in Google Maps
+                                    </a>
+                                </div>
+                            `;
+
+                            mapEl._infoWindow.setContent(popupContent);
+                            mapEl._infoWindow.open(this.map, marker);
+                        });
+
                         mapEl._checkpoints.push(marker);
                     });
 
