@@ -226,8 +226,8 @@ new class extends Component
         @endif
     </div>
 
-    <!-- Input Form (Protected against DOM morphing focus loss) -->
-    <div wire:ignore.self class="p-4 border-t border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50">
+    <!-- Input Form -->
+    <div class="p-4 border-t border-neutral-200 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/50">
         <form wire:submit="sendMessage" class="flex gap-2">
             <div class="flex-1">
                 <flux:input
