@@ -276,11 +276,11 @@ new class extends Component
                                 labelOrigin: new google.maps.Point(12, -8)
                             },
                             label: {
-                                text: `+${cp.points} pt`,
+                                text: cp.name, // Display Checkpoint Name
                                 color: '#FBBF24',
                                 fontSize: '11px',
                                 fontWeight: 'bold',
-                                className: 'bg-zinc-900/90 px-1.5 py-0.5 rounded border border-amber-500/60 shadow-lg'
+                                className: 'bg-zinc-900/90 px-2 py-0.5 rounded border border-amber-500/60 shadow-lg whitespace-nowrap'
                             }
                         });
 
