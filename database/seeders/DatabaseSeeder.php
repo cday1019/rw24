@@ -43,5 +43,9 @@ class DatabaseSeeder extends Seeder
                 'status' => 'off_duty',
             ]);
         }
+
+        $this->call([
+            BonusCheckpointSeeder::class,
+        ]);
     }
 }
