@@ -172,6 +172,29 @@ new class extends Component
 ?>
 
 <div wire:poll.10s class="relative h-full w-full min-h-[400px] rounded-xl overflow-hidden" x-data="raceMap()">
+    <!-- Custom CSS to seamlessly style Google Maps InfoWindow popups -->
+    <style>
+        .gm-style-iw {
+            background-color: #18181b !important;
+            border: 1px solid #27272a !important;
+            border-radius: 12px !important;
+            padding: 0 !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5) !important;
+        }
+        .gm-style-iw-d {
+            overflow: hidden !important;
+            padding: 0 !important;
+        }
+        .gm-style-iw-tc::after {
+            background-color: #18181b !important;
+        }
+        .gm-ui-hover-effect {
+            filter: invert(1) !important;
+            top: 4px !important;
+            right: 4px !important;
+        }
+    </style>
+
     <div id="map" class="h-full w-full" wire:ignore></div>
 
     <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_key') }}&callback=initMap" async defer></script>
@@ -206,8 +229,8 @@ new class extends Component
                             path: rp.path,
                             geodesic: true,
                             strokeColor: '#00FFCC',
-                            strokeOpacity: 0.85,
-                            strokeWeight: 5,
+                            strokeOpacity: 0.9,
+                            strokeWeight: 4,
                             map: this.map
                         });
                         mapEl._polylines.push(polyline);
@@ -229,14 +252,14 @@ new class extends Component
                                 fillOpacity: 1,
                                 strokeWeight: 2,
                                 strokeColor: 'white',
-                                scale: 6
+                                scale: 5
                             },
                             label: {
                                 text: cp.name,
-                                color: 'white',
+                                color: '#f4f4f5',
                                 fontSize: '10px',
                                 fontWeight: 'bold',
-                                className: 'mt-8'
+                                className: 'mt-7'
                             }
                         });
                         mapEl._checkpoints.push(marker);
@@ -270,32 +293,32 @@ new class extends Component
                                 fillColor: '#F59E0B',
                                 fillOpacity: 1,
                                 strokeColor: '#FFFFFF',
-                                strokeWeight: 2,
-                                scale: 1.3,
+                                strokeWeight: 1.5,
+                                scale: 0.85, // Compact, sleeker pin size
                                 anchor: new google.maps.Point(12, 32),
-                                labelOrigin: new google.maps.Point(12, -8)
+                                labelOrigin: new google.maps.Point(12, -10)
                             },
                             label: {
-                                text: cp.name, // Display Checkpoint Name
+                                text: cp.name,
                                 color: '#FBBF24',
                                 fontSize: '11px',
                                 fontWeight: 'bold',
-                                className: 'bg-zinc-900/90 px-2 py-0.5 rounded border border-amber-500/60 shadow-lg whitespace-nowrap'
+                                className: 'bg-zinc-900/90 px-2 py-0.5 rounded border border-amber-500/50 shadow-md whitespace-nowrap'
                             }
                         });
 
                         // Tap popup card with details & direct navigation
                         marker.addListener('click', () => {
                             const popupContent = `
-                                <div style="background-color: #18181b; color: #f4f4f5; padding: 12px; border-radius: 10px; font-family: system-ui, sans-serif; min-width: 180px;">
-                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                                        <span style="background-color: #f59e0b; color: #000; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 9999px;">+${cp.points} PTS</span>
+                                <div style="background-color: #18181b; color: #f4f4f5; padding: 14px; font-family: system-ui, -apple-system, sans-serif; min-width: 190px;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                        <span style="background-color: #f59e0b; color: #000; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 9999px;">+${cp.points} PTS</span>
                                         <span style="color: #10b981; font-size: 10px; font-weight: 700;">● OPEN NOW</span>
                                     </div>
-                                    <div style="font-weight: 700; font-size: 13px; color: #ffffff; margin-bottom: 4px;">${cp.name}</div>
-                                    <div style="font-size: 11px; color: #a1a1aa; margin-bottom: 10px;">📍 ${cp.location || 'Riverwest'}</div>
-                                    <a href="https://www.google.com/maps/search/?api=1&query=${cp.lat},${cp.lng}" target="_blank" style="display: block; text-align: center; background-color: #27272a; color: #38bdf8; text-decoration: none; font-size: 11px; font-weight: 600; padding: 6px; border-radius: 6px; border: 1px solid #3f3f46;">
-                                        🗺️ Navigate
+                                    <div style="font-weight: 700; font-size: 14px; color: #ffffff; margin-bottom: 4px;">${cp.name}</div>
+                                    <div style="font-size: 11px; color: #a1a1aa; margin-bottom: 12px;">📍 ${cp.location || 'Riverwest'}</div>
+                                    <a href="https://www.google.com/maps/search/?api=1&query=${cp.lat},${cp.lng}" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 6px; background-color: #27272a; color: #38bdf8; text-decoration: none; font-size: 11px; font-weight: 600; padding: 8px; border-radius: 8px; border: 1px solid #3f3f46;">
+                                        🗺️ Open in Google Maps
                                     </a>
                                 </div>
                             `;
@@ -369,27 +392,31 @@ new class extends Component
             const mapElement = document.getElementById("map");
             if (!mapElement) return;
 
+            // Sleek, modern Zinc & Charcoal map theme
             const mapOptions = {
                 zoom: 13,
+                disableDefaultUI: false,
+                zoomControl: true,
+                mapTypeControl: false,
+                streetViewControl: false,
                 styles: [
-                    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-                    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-                    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-                    { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-                    { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-                    { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#263c3f" }] },
-                    { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b9a76" }] },
-                    { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] },
-                    { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
-                    { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
-                    { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
-                    { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
-                    { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3d19c" }] },
-                    { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
-                    { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-                    { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
-                    { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
-                    { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] },
+                    { elementType: "geometry", stylers: [{ color: "#18181b" }] },
+                    { elementType: "labels.text.stroke", stylers: [{ color: "#18181b" }] },
+                    { elementType: "labels.text.fill", stylers: [{ color: "#a1a1aa" }] },
+                    { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#e4e4e7" }] },
+                    { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#71717a" }] },
+                    { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#14231e" }] },
+                    { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#4ade80" }] },
+                    { featureType: "road", elementType: "geometry", stylers: [{ color: "#27272a" }] },
+                    { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#18181b" }] },
+                    { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#71717a" }] },
+                    { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#3f3f46" }] },
+                    { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#18181b" }] },
+                    { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#a1a1aa" }] },
+                    { featureType: "transit", elementType: "geometry", stylers: [{ color: "#27272a" }] },
+                    { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#a1a1aa" }] },
+                    { featureType: "water", elementType: "geometry", stylers: [{ color: "#0f172a" }] },
+                    { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#38bdf8" }] },
                 ],
             };
 
