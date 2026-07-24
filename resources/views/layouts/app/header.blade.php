@@ -17,22 +17,22 @@
 
     <flux:spacer />
 
-    <!-- Pure Client-Side Alpine Clock (Zero Livewire Polling) -->
+    <!-- Pure Client-Side Alpine Clock (Mobile Flex-Shrink Fixed) -->
     <div
         x-data="{
-                    time: '',
-                    updateClock() {
-                        this.time = new Date().toLocaleTimeString('en-US', {
-                            timeZone: 'America/Chicago',
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            second: '2-digit',
-                            hour12: true
-                        });
-                    }
-                }"
+            time: '',
+            updateClock() {
+                this.time = new Date().toLocaleTimeString('en-US', {
+                    timeZone: 'America/Chicago',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                });
+            }
+        }"
         x-init="updateClock(); setInterval(() => updateClock(), 1000)"
-        class="flex items-center gap-2 px-2.5 py-1 text-xs font-mono font-semibold text-zinc-300 bg-zinc-800/80 border border-zinc-700/50 rounded-md shadow-sm me-2"
+        class="flex shrink-0 items-center gap-1.5 px-2 py-1 text-[11px] sm:text-xs font-mono font-semibold text-zinc-300 bg-zinc-800/80 border border-zinc-700/50 rounded-md shadow-sm me-2 whitespace-nowrap"
     >
         <span class="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
         <span x-text="time">--:--:-- PM</span>
