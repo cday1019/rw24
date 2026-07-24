@@ -157,14 +157,24 @@ new class extends Component
                 $hasNotClosed = ! $cp->closes_at || $cp->closes_at >= $now;
                 return $hasOpened && $hasNotClosed;
             })
-            ->map(fn (BonusCheckpoint $cp) => [
-                'id'       => $cp->id,
-                'name'     => $cp->name,
-                'location' => $cp->location,
-                'points'   => $cp->points,
-                'lat'      => (float) $cp->latitude,
-                'lng'      => (float) $cp->longitude,
-            ])
+            ->map(function (BonusCheckpoint $cp) {
+                $windowText = '';
+                if ($cp->opens_at || $cp->closes_at) {
+                    $openStr = $cp->opens_at ? $cp->opens_at->format('g:i A') : 'Anytime';
+                    $closeStr = $cp->closes_at ? $cp->closes_at->format('g:i A') : 'End';
+                    $windowText = "⏰ {$openStr} - {$closeStr}";
+                }
+
+                return [
+                    'id'       => $cp->id,
+                    'name'     => $cp->name,
+                    'location' => $cp->location,
+                    'points'   => $cp->points,
+                    'window'   => $windowText,
+                    'lat'      => (float) $cp->latitude,
+                    'lng'      => (float) $cp->longitude,
+                ];
+            })
             ->values()
             ->toArray();
     }
@@ -284,6 +294,8 @@ new class extends Component
 
                     // Render open bonus checkpoint markers
                     this.bonusCheckpoints.forEach(cp => {
+                        const labelText = cp.window ? `${cp.name}\n${cp.window}` : cp.name;
+
                         const marker = new google.maps.Marker({
                             position: { lat: cp.lat, lng: cp.lng },
                             map: this.map,
@@ -294,16 +306,16 @@ new class extends Component
                                 fillOpacity: 1,
                                 strokeColor: '#FFFFFF',
                                 strokeWeight: 1.5,
-                                scale: 0.85, // Compact, sleeker pin size
+                                scale: 0.85,
                                 anchor: new google.maps.Point(12, 32),
                                 labelOrigin: new google.maps.Point(12, -10)
                             },
                             label: {
-                                text: cp.name,
+                                text: labelText,
                                 color: '#FBBF24',
                                 fontSize: '11px',
                                 fontWeight: 'bold',
-                                className: 'bg-zinc-900/90 px-2 py-0.5 rounded border border-amber-500/50 shadow-md whitespace-nowrap'
+                                className: 'bg-zinc-900/90 px-2 py-1 rounded border border-amber-500/50 shadow-md text-center whitespace-pre leading-tight'
                             }
                         });
 
@@ -315,7 +327,8 @@ new class extends Component
                                         <span style="background-color: #f59e0b; color: #000; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 9999px;">+${cp.points} PTS</span>
                                         <span style="color: #10b981; font-size: 10px; font-weight: 700;">● OPEN NOW</span>
                                     </div>
-                                    <div style="font-weight: 700; font-size: 14px; color: #ffffff; margin-bottom: 4px;">${cp.name}</div>
+                                    <div style="font-weight: 700; font-size: 14px; color: #ffffff; margin-bottom: 2px;">${cp.name}</div>
+                                    ${cp.window ? `<div style="font-size: 11px; color: #f59e0b; font-weight: 600; margin-bottom: 6px;">${cp.window}</div>` : ''}
                                     <div style="font-size: 11px; color: #a1a1aa; margin-bottom: 12px;">📍 ${cp.location || 'Riverwest'}</div>
                                     <a href="https://www.google.com/maps/search/?api=1&query=${cp.lat},${cp.lng}" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 6px; background-color: #27272a; color: #38bdf8; text-decoration: none; font-size: 11px; font-weight: 600; padding: 8px; border-radius: 8px; border: 1px solid #3f3f46;">
                                         🗺️ Open in Google Maps
