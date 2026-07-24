@@ -232,6 +232,7 @@ new class extends Component
                     @foreach ($this->checkpoints as $cp)
                         @php
                             $isOpen = $cp->isOpenNow();
+                            $opensSoon = ! $isOpen && $cp->opens_at && $cp->opens_at->isFuture() && $cp->opens_at->lte(now()->addHour());
                             $isCompleted = $cp->status === 'completed';
                             $isSkipped = $cp->status === 'skipped';
                         @endphp
@@ -248,6 +249,10 @@ new class extends Component
                                             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 animate-pulse">
                                                 <span class="size-1.5 rounded-full bg-emerald-400"></span> OPEN NOW
                                             </span>
+                                        @elseif($opensSoon && ! $isCompleted && ! $isSkipped)
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/20 text-sky-400 border border-sky-500/40">
+                                                <span class="size-1.5 rounded-full bg-sky-400"></span> OPENS SOON
+                                            </span>
                                         @endif
                                     </div>
                                     @if($cp->opens_at || $cp->closes_at)
@@ -262,14 +267,20 @@ new class extends Component
                                 </div>
                             </flux:table.cell>
 
-                            <!-- Location -->
+                            <!-- Location & Navigation Link -->
                             <flux:table.cell>
-                                <div class="flex flex-col">
+                                <div class="flex flex-col gap-1">
                                     <span class="text-xs text-zinc-300">{{ $cp->location ?: 'See Official Map' }}</span>
                                     @if($cp->latitude && $cp->longitude)
-                                        <span class="text-[10px] font-mono text-emerald-400">📍 On Live Map</span>
+                                        <a href="https://www.google.com/maps/search/?api=1&query={{ $cp->latitude }},{{ $cp->longitude }}" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400 hover:underline">
+                                            📍 Live Map Link ↗
+                                        </a>
+                                    @elseif($cp->location)
+                                        <a href="https://www.google.com/maps/search/?api=1&query={{ urlencode($cp->location . ', Milwaukee, WI') }}" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-mono text-sky-400 hover:underline">
+                                            🗺️ Search Google Maps ↗
+                                        </a>
                                     @else
-                                        <span class="text-[10px] font-mono text-zinc-500">⚠️ No Map Pin</span>
+                                        <span class="text-[10px] font-mono text-zinc-500">⚠️ No Location</span>
                                     @endif
                                 </div>
                             </flux:table.cell>
