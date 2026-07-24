@@ -158,11 +158,12 @@ new class extends Component
                 return $hasOpened && $hasNotClosed;
             })
             ->map(fn (BonusCheckpoint $cp) => [
-                'id'     => $cp->id,
-                'name'   => $cp->name,
-                'points' => $cp->points,
-                'lat'    => (float) $cp->latitude,
-                'lng'    => (float) $cp->longitude,
+                'id'       => $cp->id,
+                'name'     => $cp->name,
+                'location' => $cp->location,
+                'points'   => $cp->points,
+                'lat'      => (float) $cp->latitude,
+                'lng'      => (float) $cp->longitude,
             ])
             ->values()
             ->toArray();
@@ -170,167 +171,204 @@ new class extends Component
 };
 ?>
 
-<div wire:poll.10s class="relative h-full w-full min-h-[400px] rounded-xl overflow-hidden"
-     x-data="{
-        locations: @entangle('teammateLocations'),
-        routePaths: @js($routePaths),
-        checkpoints: @js($checkpoints),
-        bonusCheckpoints: @entangle('openBonusCheckpoints'),
-        map: null,
-        init() {
-            this.$watch('locations', () => this.updateMarkers());
-            this.$watch('bonusCheckpoints', () => this.renderBonusCheckpoints());
-        },
-        renderRoute() {
-            if (!this.map) return;
-            const mapEl = document.getElementById('map');
-            if (!mapEl._polylines) mapEl._polylines = [];
-            if (!mapEl._checkpoints) mapEl._checkpoints = [];
-
-            // Clear existing route polylines
-            mapEl._polylines.forEach(p => p.setMap(null));
-            mapEl._polylines = [];
-
-            // Render new route polylines
-            this.routePaths.forEach(rp => {
-                const polyline = new google.maps.Polyline({
-                    path: rp.path,
-                    geodesic: true,
-                    strokeColor: '#00FFCC',
-                    strokeOpacity: 0.85,
-                    strokeWeight: 5,
-                    map: this.map
-                });
-                mapEl._polylines.push(polyline);
-            });
-
-            // Clear existing checkpoint markers
-            mapEl._checkpoints.forEach(m => m.setMap(null));
-            mapEl._checkpoints = [];
-
-            // Render new route checkpoint markers
-            this.checkpoints.forEach(cp => {
-                const marker = new google.maps.Marker({
-                    position: { lat: cp.lat, lng: cp.lng },
-                    map: this.map,
-                    title: cp.name,
-                    icon: {
-                        path: google.maps.SymbolPath.CIRCLE,
-                        fillColor: '#FF007F',
-                        fillOpacity: 1,
-                        strokeWeight: 2,
-                        strokeColor: 'white',
-                        scale: 6
-                    },
-                    label: {
-                        text: cp.name,
-                        color: 'white',
-                        fontSize: '10px',
-                        fontWeight: 'bold',
-                        className: 'mt-8'
-                    }
-                });
-                mapEl._checkpoints.push(marker);
-            });
-
-            this.fitMapToRoute();
-        },
-        renderBonusCheckpoints() {
-            if (!this.map) return;
-            const mapEl = document.getElementById('map');
-            if (!mapEl._bonusMarkers) mapEl._bonusMarkers = [];
-
-            // Clear existing bonus markers
-            mapEl._bonusMarkers.forEach(m => m.setMap(null));
-            mapEl._bonusMarkers = [];
-
-            // Render open bonus checkpoint markers
-            this.bonusCheckpoints.forEach(cp => {
-                const marker = new google.maps.Marker({
-                    position: { lat: cp.lat, lng: cp.lng },
-                    map: this.map,
-                    title: `${cp.name} (+${cp.points} pts)`,
-                    icon: {
-                        path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-                        fillColor: '#F59E0B',
-                        fillOpacity: 1,
-                        strokeWeight: 2,
-                        strokeColor: '#FFFFFF',
-                        scale: 7
-                    },
-                    label: {
-                        text: `🎯 ${cp.name} (+${cp.points} pts)`,
-                        color: '#FBBF24',
-                        fontSize: '11px',
-                        fontWeight: 'bold',
-                        className: 'mt-8 bg-zinc-900/90 px-2 py-0.5 rounded border border-amber-500/50 shadow-md'
-                    }
-                });
-                mapEl._bonusMarkers.push(marker);
-            });
-        },
-        fitMapToRoute() {
-            if (!this.map) return;
-            const bounds = new google.maps.LatLngBounds();
-            let hasPoints = false;
-
-            // Include KML Route
-            this.routePaths.forEach(rp => {
-                rp.path.forEach(pos => {
-                    bounds.extend(pos);
-                    hasPoints = true;
-                });
-            });
-
-            // Include Active Teammates
-            this.locations.forEach(loc => {
-                bounds.extend({ lat: loc.lat, lng: loc.lng });
-                hasPoints = true;
-            });
-
-            // Include Open Bonus Checkpoints
-            this.bonusCheckpoints.forEach(cp => {
-                bounds.extend({ lat: cp.lat, lng: cp.lng });
-                hasPoints = true;
-            });
-
-            if (hasPoints) {
-                this.map.fitBounds(bounds);
-            }
-        },
-        updateMarkers() {
-            if (!this.map) return;
-            const mapEl = document.getElementById('map');
-            if (!mapEl._riderMarkers) mapEl._riderMarkers = [];
-
-            // Clear existing rider markers cleanly
-            mapEl._riderMarkers.forEach(marker => marker.setMap(null));
-            mapEl._riderMarkers = [];
-
-            // Add new rider markers
-            this.locations.forEach(loc => {
-                const marker = new google.maps.Marker({
-                    position: { lat: loc.lat, lng: loc.lng },
-                    map: this.map,
-                    label: {
-                        text: loc.initials,
-                        color: 'white',
-                        fontWeight: 'bold'
-                    },
-                    title: `${loc.name} (${loc.speed} • 🔋 ${loc.battery})`
-                });
-                mapEl._riderMarkers.push(marker);
-            });
-        }
-    }"
->
+<div wire:poll.10s class="relative h-full w-full min-h-[400px] rounded-xl overflow-hidden" x-data="raceMap()">
     <div id="map" class="h-full w-full" wire:ignore></div>
 
     <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_key') }}&callback=initMap" async defer></script>
 
     <script>
+        function raceMap() {
+            return {
+                locations: @entangle('teammateLocations'),
+                routePaths: @js($routePaths),
+                checkpoints: @js($checkpoints),
+                bonusCheckpoints: @entangle('openBonusCheckpoints'),
+                map: null,
+
+                init() {
+                    this.$watch('locations', () => this.updateMarkers());
+                    this.$watch('bonusCheckpoints', () => this.renderBonusCheckpoints());
+                },
+
+                renderRoute() {
+                    if (!this.map) return;
+                    const mapEl = document.getElementById('map');
+                    if (!mapEl._polylines) mapEl._polylines = [];
+                    if (!mapEl._checkpoints) mapEl._checkpoints = [];
+
+                    // Clear existing route polylines
+                    mapEl._polylines.forEach(p => p.setMap(null));
+                    mapEl._polylines = [];
+
+                    // Render new route polylines
+                    this.routePaths.forEach(rp => {
+                        const polyline = new google.maps.Polyline({
+                            path: rp.path,
+                            geodesic: true,
+                            strokeColor: '#00FFCC',
+                            strokeOpacity: 0.85,
+                            strokeWeight: 5,
+                            map: this.map
+                        });
+                        mapEl._polylines.push(polyline);
+                    });
+
+                    // Clear existing checkpoint markers
+                    mapEl._checkpoints.forEach(m => m.setMap(null));
+                    mapEl._checkpoints = [];
+
+                    // Render new route checkpoint markers
+                    this.checkpoints.forEach(cp => {
+                        const marker = new google.maps.Marker({
+                            position: { lat: cp.lat, lng: cp.lng },
+                            map: this.map,
+                            title: cp.name,
+                            icon: {
+                                path: google.maps.SymbolPath.CIRCLE,
+                                fillColor: '#FF007F',
+                                fillOpacity: 1,
+                                strokeWeight: 2,
+                                strokeColor: 'white',
+                                scale: 6
+                            },
+                            label: {
+                                text: cp.name,
+                                color: 'white',
+                                fontSize: '10px',
+                                fontWeight: 'bold',
+                                className: 'mt-8'
+                            }
+                        });
+                        mapEl._checkpoints.push(marker);
+                    });
+
+                    this.fitMapToRoute();
+                },
+
+                renderBonusCheckpoints() {
+                    if (!this.map) return;
+                    const mapEl = document.getElementById('map');
+                    if (!mapEl._bonusMarkers) mapEl._bonusMarkers = [];
+
+                    // Clear existing bonus markers
+                    mapEl._bonusMarkers.forEach(m => m.setMap(null));
+                    mapEl._bonusMarkers = [];
+
+                    // Shared InfoWindow for tap popups
+                    if (!mapEl._infoWindow) {
+                        mapEl._infoWindow = new google.maps.InfoWindow();
+                    }
+
+                    // Render open bonus checkpoint markers
+                    this.bonusCheckpoints.forEach(cp => {
+                        const marker = new google.maps.Marker({
+                            position: { lat: cp.lat, lng: cp.lng },
+                            map: this.map,
+                            title: cp.name,
+                            icon: {
+                                path: 'M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20C24 5.37 18.63 0 12 0z',
+                                fillColor: '#F59E0B',
+                                fillOpacity: 1,
+                                strokeColor: '#FFFFFF',
+                                strokeWeight: 2,
+                                scale: 1.3,
+                                anchor: new google.maps.Point(12, 32),
+                                labelOrigin: new google.maps.Point(12, -8)
+                            },
+                            label: {
+                                text: `+${cp.points} pt`,
+                                color: '#FBBF24',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                className: 'bg-zinc-900/90 px-1.5 py-0.5 rounded border border-amber-500/60 shadow-lg'
+                            }
+                        });
+
+                        // Tap popup card with details & direct navigation
+                        marker.addListener('click', () => {
+                            const popupContent = `
+                                <div style="background-color: #18181b; color: #f4f4f5; padding: 12px; border-radius: 10px; font-family: system-ui, sans-serif; min-width: 180px;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                                        <span style="background-color: #f59e0b; color: #000; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 9999px;">+${cp.points} PTS</span>
+                                        <span style="color: #10b981; font-size: 10px; font-weight: 700;">● OPEN NOW</span>
+                                    </div>
+                                    <div style="font-weight: 700; font-size: 13px; color: #ffffff; margin-bottom: 4px;">${cp.name}</div>
+                                    <div style="font-size: 11px; color: #a1a1aa; margin-bottom: 10px;">📍 ${cp.location || 'Riverwest'}</div>
+                                    <a href="https://www.google.com/maps/search/?api=1&query=${cp.lat},${cp.lng}" target="_blank" style="display: block; text-align: center; background-color: #27272a; color: #38bdf8; text-decoration: none; font-size: 11px; font-weight: 600; padding: 6px; border-radius: 6px; border: 1px solid #3f3f46;">
+                                        🗺️ Navigate
+                                    </a>
+                                </div>
+                            `;
+
+                            mapEl._infoWindow.setContent(popupContent);
+                            mapEl._infoWindow.open(this.map, marker);
+                        });
+
+                        mapEl._bonusMarkers.push(marker);
+                    });
+                },
+
+                fitMapToRoute() {
+                    if (!this.map) return;
+                    const bounds = new google.maps.LatLngBounds();
+                    let hasPoints = false;
+
+                    // Include KML Route
+                    this.routePaths.forEach(rp => {
+                        rp.path.forEach(pos => {
+                            bounds.extend(pos);
+                            hasPoints = true;
+                        });
+                    });
+
+                    // Include Active Teammates
+                    this.locations.forEach(loc => {
+                        bounds.extend({ lat: loc.lat, lng: loc.lng });
+                        hasPoints = true;
+                    });
+
+                    // Include Open Bonus Checkpoints
+                    this.bonusCheckpoints.forEach(cp => {
+                        bounds.extend({ lat: cp.lat, lng: cp.lng });
+                        hasPoints = true;
+                    });
+
+                    if (hasPoints) {
+                        this.map.fitBounds(bounds);
+                    }
+                },
+
+                updateMarkers() {
+                    if (!this.map) return;
+                    const mapEl = document.getElementById('map');
+                    if (!mapEl._riderMarkers) mapEl._riderMarkers = [];
+
+                    // Clear existing rider markers cleanly
+                    mapEl._riderMarkers.forEach(marker => marker.setMap(null));
+                    mapEl._riderMarkers = [];
+
+                    // Add new rider markers
+                    this.locations.forEach(loc => {
+                        const marker = new google.maps.Marker({
+                            position: { lat: loc.lat, lng: loc.lng },
+                            map: this.map,
+                            label: {
+                                text: loc.initials,
+                                color: 'white',
+                                fontWeight: 'bold'
+                            },
+                            title: `${loc.name} (${loc.speed} • 🔋 ${loc.battery})`
+                        });
+                        mapEl._riderMarkers.push(marker);
+                    });
+                }
+            };
+        }
+
         function initMap() {
-            const mapContainer = document.getElementById('map');
+            const mapElement = document.getElementById("map");
+            if (!mapElement) return;
+
             const mapOptions = {
                 zoom: 13,
                 styles: [
@@ -354,14 +392,16 @@ new class extends Component
                     { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] },
                 ],
             };
-            const mapElement = document.getElementById("map");
-            const map = new google.maps.Map(mapElement, mapOptions);
 
+            const map = new google.maps.Map(mapElement, mapOptions);
             const data = Alpine.$data(mapElement.closest('[x-data]'));
-            data.map = map;
-            data.renderRoute();
-            data.updateMarkers();
-            data.renderBonusCheckpoints();
+
+            if (data) {
+                data.map = map;
+                data.renderRoute();
+                data.updateMarkers();
+                data.renderBonusCheckpoints();
+            }
         }
     </script>
 </div>
