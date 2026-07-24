@@ -246,7 +246,7 @@ new class extends Component
                         zIndex: 999,
                         icon: {
                             path: 'M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20C24 5.37 18.63 0 12 0z',
-                            fillColor: '#10B981', // Distinct Emerald Green
+                            fillColor: '#10B981',
                             fillOpacity: 1,
                             strokeColor: '#FFFFFF',
                             strokeWeight: 2,
@@ -369,7 +369,7 @@ new class extends Component
                         mapEl._infoWindow = new google.maps.InfoWindow();
                     }
 
-                    // Render open bonus checkpoint markers (Clean pins without text badges)
+                    // Render open bonus checkpoint markers
                     this.bonusCheckpoints.forEach((cp, index) => {
                         const marker = new google.maps.Marker({
                             position: { lat: cp.lat, lng: cp.lng },
@@ -378,7 +378,7 @@ new class extends Component
                             zIndex: 100 + index,
                             icon: {
                                 path: 'M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20C24 5.37 18.63 0 12 0z',
-                                fillColor: cp.isOpenNow ? '#F59E0B' : '#38BDF8', // Amber if Open Now, Cyan if Opening Soon
+                                fillColor: cp.isOpenNow ? '#F59E0B' : '#38BDF8',
                                 fillOpacity: 1,
                                 strokeColor: '#FFFFFF',
                                 strokeWeight: 2,
@@ -475,11 +475,17 @@ new class extends Component
             };
         }
 
+        // Safe Map Initialization (Prevents Fatal Alpine/Livewire JS Crash)
         function initMap() {
             const mapElement = document.getElementById("map");
             if (!mapElement) return;
 
-            // Sleek, modern Zinc & Charcoal map theme
+            // Wait until Alpine is initialized on mobile devices
+            if (typeof window.Alpine === 'undefined') {
+                document.addEventListener('alpine:initialized', () => initMap(), { once: true });
+                return;
+            }
+
             const mapOptions = {
                 zoom: 13,
                 disableDefaultUI: false,
@@ -508,15 +514,22 @@ new class extends Component
             };
 
             const map = new google.maps.Map(mapElement, mapOptions);
-            const data = Alpine.$data(mapElement.closest('[x-data]'));
+            const parentEl = mapElement.closest('[x-data]');
 
-            if (data) {
-                data.map = map;
-                data.renderRoute();
-                data.renderHomeBase();
-                data.updateMarkers();
-                data.renderBonusCheckpoints();
-                data.fitMapToRoute();
+            if (parentEl && window.Alpine) {
+                try {
+                    const data = Alpine.$data(parentEl);
+                    if (data) {
+                        data.map = map;
+                        data.renderRoute();
+                        data.renderHomeBase();
+                        data.updateMarkers();
+                        data.renderBonusCheckpoints();
+                        data.fitMapToRoute();
+                    }
+                } catch (e) {
+                    console.error('Error binding map to Alpine:', e);
+                }
             }
         }
     </script>
