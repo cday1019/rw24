@@ -222,11 +222,58 @@ new class extends Component
                 routePaths: @js($routePaths),
                 checkpoints: @js($checkpoints),
                 bonusCheckpoints: @entangle('openBonusCheckpoints'),
+                homeBasePos: { lat: 43.06174, lng: -87.90125 },
                 map: null,
 
                 init() {
                     this.$watch('locations', () => this.updateMarkers());
                     this.$watch('bonusCheckpoints', () => this.renderBonusCheckpoints());
+                },
+
+                renderHomeBase() {
+                    if (!this.map) return;
+                    const mapEl = document.getElementById('map');
+                    if (mapEl._homeBaseMarker) mapEl._homeBaseMarker.setMap(null);
+
+                    if (!mapEl._infoWindow) {
+                        mapEl._infoWindow = new google.maps.InfoWindow();
+                    }
+
+                    const marker = new google.maps.Marker({
+                        position: this.homeBasePos,
+                        map: this.map,
+                        title: 'Home Base (606 E Meinecke Ave)',
+                        zIndex: 999,
+                        icon: {
+                            path: 'M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20C24 5.37 18.63 0 12 0z',
+                            fillColor: '#10B981', // Distinct Emerald Green
+                            fillOpacity: 1,
+                            strokeColor: '#FFFFFF',
+                            strokeWeight: 2,
+                            scale: 1.25,
+                            anchor: new google.maps.Point(12, 32)
+                        }
+                    });
+
+                    marker.addListener('click', () => {
+                        const popupContent = `
+                            <div style="background-color: #18181b; color: #f4f4f5; padding: 14px; font-family: system-ui, -apple-system, sans-serif; min-width: 190px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                    <span style="background-color: #10b981; color: #000; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 9999px;">🏠 HQ / BASE</span>
+                                </div>
+                                <div style="font-weight: 700; font-size: 14px; color: #ffffff; margin-bottom: 2px;">Home Base</div>
+                                <div style="font-size: 11px; color: #a1a1aa; margin-bottom: 12px;">📍 606 E Meinecke Ave</div>
+                                <a href="https://www.google.com/maps/search/?api=1&query=606+E+Meinecke+Ave,+Milwaukee,+WI" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 6px; background-color: #27272a; color: #38bdf8; text-decoration: none; font-size: 11px; font-weight: 600; padding: 8px; border-radius: 8px; border: 1px solid #3f3f46;">
+                                    🗺️ Open in Google Maps
+                                </a>
+                            </div>
+                        `;
+
+                        mapEl._infoWindow.setContent(popupContent);
+                        mapEl._infoWindow.open(this.map, marker);
+                    });
+
+                    mapEl._homeBaseMarker = marker;
                 },
 
                 renderRoute() {
@@ -335,7 +382,7 @@ new class extends Component
                                 fillOpacity: 1,
                                 strokeColor: '#FFFFFF',
                                 strokeWeight: 2,
-                                scale: 1.1, // Sized cleanly for easy tapping
+                                scale: 1.1,
                                 anchor: new google.maps.Point(12, 32)
                             }
                         });
@@ -373,6 +420,10 @@ new class extends Component
                     if (!this.map) return;
                     const bounds = new google.maps.LatLngBounds();
                     let hasPoints = false;
+
+                    // Include Home Base
+                    bounds.extend(this.homeBasePos);
+                    hasPoints = true;
 
                     // Zoom strictly to KML Route Paths & Checkpoints
                     this.routePaths.forEach(rp => {
@@ -462,6 +513,7 @@ new class extends Component
             if (data) {
                 data.map = map;
                 data.renderRoute();
+                data.renderHomeBase();
                 data.updateMarkers();
                 data.renderBonusCheckpoints();
                 data.fitMapToRoute();
