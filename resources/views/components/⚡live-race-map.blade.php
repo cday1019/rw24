@@ -380,7 +380,7 @@ new class extends Component
                     const bounds = new google.maps.LatLngBounds();
                     let hasPoints = false;
 
-                    // Include KML Route
+                    // Zoom strictly to KML Route Paths & Checkpoints
                     this.routePaths.forEach(rp => {
                         rp.path.forEach(pos => {
                             bounds.extend(pos);
@@ -388,20 +388,18 @@ new class extends Component
                         });
                     });
 
-                    // Include Active Teammates
-                    this.locations.forEach(loc => {
-                        bounds.extend({ lat: loc.lat, lng: loc.lng });
-                        hasPoints = true;
-                    });
-
-                    // Include Open Bonus Checkpoints
-                    this.bonusCheckpoints.forEach(cp => {
+                    this.checkpoints.forEach(cp => {
                         bounds.extend({ lat: cp.lat, lng: cp.lng });
                         hasPoints = true;
                     });
 
                     if (hasPoints) {
-                        this.map.fitBounds(bounds);
+                        this.map.fitBounds(bounds, {
+                            top: 40,
+                            bottom: 40,
+                            left: 40,
+                            right: 40
+                        });
                     }
                 },
 
@@ -472,6 +470,7 @@ new class extends Component
                 data.renderRoute();
                 data.updateMarkers();
                 data.renderBonusCheckpoints();
+                data.fitMapToRoute();
             }
         }
     </script>
