@@ -170,13 +170,10 @@ new class extends Component
                                         @endif
                                     </div>
                                     @if ($location)
-                                        <span class="text-xs text-neutral-400 flex items-center gap-1.5 flex-wrap mt-0.5">
+                                        <span class="text-xs text-neutral-400 flex items-center gap-2 mt-0.5">
                                             <span>⚡ {{ round($location->speed ?? 0) }} mph</span>
                                             @if (! is_null($location->battery))
                                                 <span>• 🔋 {{ $location->battery }}%</span>
-                                            @endif
-                                            @if ($location->pinged_at)
-                                                <span class="text-neutral-500 text-[11px] font-mono">• {{ $location->pinged_at->diffForHumans(['short' => true]) }}</span>
                                             @endif
                                         </span>
                                     @else
