@@ -5,6 +5,7 @@ use Livewire\Attributes\Computed;
 use App\Models\BonusCheckpoint;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 
 new class extends Component
 {
@@ -14,6 +15,8 @@ new class extends Component
     // Form Fields
     public string $name = '';
     public string $location = '';
+    public ?string $latitude = null;
+    public ?string $longitude = null;
     public string $opens_at = '';
     public string $closes_at = '';
     public int $points = 1;
@@ -58,7 +61,7 @@ new class extends Component
 
     public function openCreateModal(): void
     {
-        $this->reset(['editingCheckpointId', 'name', 'location', 'opens_at', 'closes_at', 'points', 'assigned_user_id', 'notes']);
+        $this->reset(['editingCheckpointId', 'name', 'location', 'latitude', 'longitude', 'opens_at', 'closes_at', 'points', 'assigned_user_id', 'notes']);
         $this->points = 1;
 
         // Default opens_at to Friday night of race weekend if empty
@@ -73,6 +76,8 @@ new class extends Component
         $this->editingCheckpointId = $checkpoint->id;
         $this->name = $checkpoint->name;
         $this->location = $checkpoint->location ?? '';
+        $this->latitude = $checkpoint->latitude !== null ? (string) $checkpoint->latitude : '';
+        $this->longitude = $checkpoint->longitude !== null ? (string) $checkpoint->longitude : '';
 
         // Format Carbon dates for datetime-local inputs
         $this->opens_at = $checkpoint->opens_at ? $checkpoint->opens_at->format('Y-m-d\TH:i') : '';
@@ -90,6 +95,8 @@ new class extends Component
         $this->validate([
             'name' => 'required|string|max:255',
             'location' => 'nullable|string|max:255',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
             'opens_at' => 'nullable|string',
             'closes_at' => 'nullable|string',
             'points' => 'required|integer|min:1',
@@ -97,33 +104,56 @@ new class extends Component
             'notes' => 'nullable|string|max:500',
         ]);
 
+        $lat = is_numeric($this->latitude) ? (float) $this->latitude : null;
+        $lng = is_numeric($this->longitude) ? (float) $this->longitude : null;
+
+        // Auto-geocode if coordinates were left blank and location text exists
+        if (($lat === null || $lng === null) && ! empty($this->location)) {
+            $searchAddress = trim($this->location);
+
+            if (! str_contains(strtolower($searchAddress), 'milwaukee')) {
+                $searchAddress .= ', Milwaukee, WI';
+            }
+
+            try {
+                $response = Http::get('https://maps.googleapis.com/maps/api/geocode/json', [
+                    'address' => $searchAddress,
+                    'key'     => config('services.google.maps_key'),
+                ]);
+
+                if ($response->successful() && isset($response['results'][0]['geometry']['location'])) {
+                    $lat = $response['results'][0]['geometry']['location']['lat'];
+                    $lng = $response['results'][0]['geometry']['location']['lng'];
+                }
+            } catch (\Throwable $e) {
+                // Silently handle API issues so manual saves aren't blocked
+            }
+        }
+
+        $data = [
+            'name' => $this->name,
+            'location' => $this->location,
+            'latitude' => $lat,
+            'longitude' => $lng,
+            'opens_at' => $this->opens_at ?: null,
+            'closes_at' => $this->closes_at ?: null,
+            'points' => $this->points,
+            'assigned_user_id' => $this->assigned_user_id ?: null,
+            'notes' => $this->notes,
+        ];
+
         if ($this->editingCheckpointId) {
             $checkpoint = BonusCheckpoint::where('team_id', Auth::user()->team_id)
                 ->findOrFail($this->editingCheckpointId);
 
-            $checkpoint->update([
-                'name' => $this->name,
-                'location' => $this->location,
-                'opens_at' => $this->opens_at ?: null,
-                'closes_at' => $this->closes_at ?: null,
-                'points' => $this->points,
-                'assigned_user_id' => $this->assigned_user_id ?: null,
-                'notes' => $this->notes,
-            ]);
+            $checkpoint->update($data);
 
             Flux::toast(text: __('Bonus Checkpoint updated!'), variant: 'success');
         } else {
-            BonusCheckpoint::create([
+            BonusCheckpoint::create(array_merge($data, [
                 'team_id' => Auth::user()->team_id,
-                'name' => $this->name,
-                'location' => $this->location,
-                'opens_at' => $this->opens_at ?: null,
-                'closes_at' => $this->closes_at ?: null,
-                'points' => $this->points,
-                'assigned_user_id' => $this->assigned_user_id ?: null,
-                'notes' => $this->notes,
                 'status' => 'pending',
-            ]);
+            ]));
 
             Flux::toast(text: __('Bonus Checkpoint added!'), variant: 'success');
         }
@@ -234,7 +264,14 @@ new class extends Component
 
                             <!-- Location -->
                             <flux:table.cell>
-                                <span class="text-xs text-zinc-300">{{ $cp->location ?: 'See Official Map' }}</span>
+                                <div class="flex flex-col">
+                                    <span class="text-xs text-zinc-300">{{ $cp->location ?: 'See Official Map' }}</span>
+                                    @if($cp->latitude && $cp->longitude)
+                                        <span class="text-[10px] font-mono text-emerald-400">📍 On Live Map</span>
+                                    @else
+                                        <span class="text-[10px] font-mono text-zinc-500">⚠️ No Map Pin</span>
+                                    @endif
+                                </div>
                             </flux:table.cell>
 
                             <!-- Assigned Runner Dropdown -->
@@ -307,7 +344,7 @@ new class extends Component
     </flux:card>
 
     <!-- Create / Edit Checkpoint Modal -->
-    <flux:modal wire:model="showModal" class="md:w-96 space-y-6">
+    <flux:modal wire:model="showModal" class="md:w-[28rem] space-y-6">
         <div>
             <flux:heading size="lg">{{ $editingCheckpointId ? 'Edit Bonus Checkpoint' : 'Add Bonus Checkpoint' }}</flux:heading>
             <flux:subheading>Enter details from the official RW24 bonus schedule.</flux:subheading>
@@ -315,7 +352,15 @@ new class extends Component
 
         <form wire:submit="saveCheckpoint" class="space-y-4">
             <flux:input wire:model="name" label="Checkpoint Name" placeholder="e.g. Checkpoint #1: Pier Tattoo" required />
-            <flux:input wire:model="location" label="Location / Address" placeholder="e.g. Bremen & Wright St" />
+            <flux:input wire:model="location" label="Location / Address / Venue" placeholder="e.g. Booth and Garfield, or Black Husky" />
+
+            <div class="space-y-1">
+                <div class="grid grid-cols-2 gap-3">
+                    <flux:input wire:model="latitude" label="Lat (Optional)" placeholder="e.g. 43.0683" />
+                    <flux:input wire:model="longitude" label="Lng (Optional)" placeholder="e.g. -87.9048" />
+                </div>
+                <p class="text-[11px] text-zinc-500">Auto-geocoded via Google Maps if left blank.</p>
+            </div>
 
             <div class="grid grid-cols-2 gap-3">
                 <flux:input wire:model="opens_at" type="datetime-local" label="Opens At" />
