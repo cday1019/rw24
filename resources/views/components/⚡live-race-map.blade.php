@@ -187,7 +187,7 @@ new class extends Component
 };
 ?>
 
-<div wire:poll.10s class="relative h-full w-full min-h-[400px] rounded-xl overflow-hidden" x-data="raceMap()">
+<div wire:poll.visible.10s class="relative h-full w-full min-h-[400px] rounded-xl overflow-hidden" x-data="raceMap()">
     <!-- High-Contrast Styling for InfoWindow Popups -->
     <style>
         .gm-style-iw {

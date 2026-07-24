@@ -92,7 +92,7 @@ new class extends Component
     }
 }; ?>
 
-<div wire:poll.5s class="flex flex-col h-full bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+<div wire:poll.visible.5s class="flex flex-col h-full bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
     <!-- Channel Tabs -->
     <div class="flex border-b border-neutral-200 dark:border-zinc-800 p-1 bg-neutral-50 dark:bg-zinc-950">
         <button

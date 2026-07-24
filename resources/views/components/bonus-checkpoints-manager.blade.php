@@ -196,7 +196,7 @@ new class extends Component
 };
 ?>
 
-<div wire:poll.10s class="max-w-6xl mx-auto space-y-6 py-6">
+<div wire:poll.visible.10s class="max-w-6xl mx-auto space-y-6 py-6">
     <!-- Top Summary & Action Bar -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-xl bg-zinc-900 border border-zinc-800">
         <div class="flex items-center gap-4">
