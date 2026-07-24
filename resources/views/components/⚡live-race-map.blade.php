@@ -158,12 +158,11 @@ new class extends Component
                 return $hasOpened && $hasNotClosed;
             })
             ->map(fn (BonusCheckpoint $cp) => [
-                'id'       => $cp->id,
-                'name'     => $cp->name,
-                'location' => $cp->location,
-                'points'   => $cp->points,
-                'lat'      => (float) $cp->latitude,
-                'lng'      => (float) $cp->longitude,
+                'id'     => $cp->id,
+                'name'   => $cp->name,
+                'points' => $cp->points,
+                'lat'    => (float) $cp->latitude,
+                'lng'    => (float) $cp->longitude,
             ])
             ->values()
             ->toArray();
@@ -245,156 +244,124 @@ new class extends Component
             mapEl._bonusMarkers.forEach(m => m.setMap(null));
             mapEl._bonusMarkers = [];
 
-            // Shared InfoWindow for tap popups
-            if (!mapEl._infoWindow) {
-                mapEl._infoWindow = new google.maps.InfoWindow();
+            // Render open bonus checkpoint markers
+            this.bonusCheckpoints.forEach(cp => {
+                const marker = new google.maps.Marker({
+                    position: { lat: cp.lat, lng: cp.lng },
+                    map: this.map,
+                    title: `${cp.name} (+${cp.points} pts)`,
+                    icon: {
+                        path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                        fillColor: '#F59E0B',
+                        fillOpacity: 1,
+                        strokeWeight: 2,
+                        strokeColor: '#FFFFFF',
+                        scale: 7
+                    },
+                    label: {
+                        text: `🎯 ${cp.name} (+${cp.points} pts)`,
+                        color: '#FBBF24',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        className: 'mt-8 bg-zinc-900/90 px-2 py-0.5 rounded border border-amber-500/50 shadow-md'
+                    }
+                });
+                mapEl._bonusMarkers.push(marker);
+            });
+        },
+        fitMapToRoute() {
+            if (!this.map) return;
+            const bounds = new google.maps.LatLngBounds();
+            let hasPoints = false;
+
+            // Include KML Route
+            this.routePaths.forEach(rp => {
+                rp.path.forEach(pos => {
+                    bounds.extend(pos);
+                    hasPoints = true;
+                });
+            });
+
+            // Include Active Teammates
+            this.locations.forEach(loc => {
+                bounds.extend({ lat: loc.lat, lng: loc.lng });
+                hasPoints = true;
+            });
+
+            // Include Open Bonus Checkpoints
+            this.bonusCheckpoints.forEach(cp => {
+                bounds.extend({ lat: cp.lat, lng: cp.lng });
+                hasPoints = true;
+            });
+
+            if (hasPoints) {
+                this.map.fitBounds(bounds);
             }
+        },
+        updateMarkers() {
+            if (!this.map) return;
+            const mapEl = document.getElementById('map');
+            if (!mapEl._riderMarkers) mapEl._riderMarkers = [];
 
-            // Custom SVG Pin Icon (Gold drop-pin with a star center)
-            const bonusSvg = `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 32" width="30" height="40">
-<path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20C24 5.37 18.63 0 12 0z" fill="#F59E0B" stroke="#FFFFFF" stroke-width="2"/>
-<circle cx="12" cy="11" r="6" fill="#18181B"/>
-<text x="12" y="15" text-anchor="middle" fill="#F59E0B" font-size="11" font-weight="bold" font-family="sans-serif">★</text>
-</svg>
-`;
+            // Clear existing rider markers cleanly
+            mapEl._riderMarkers.forEach(marker => marker.setMap(null));
+            mapEl._riderMarkers = [];
 
-// Render open bonus checkpoint markers
-this.bonusCheckpoints.forEach(cp => {
-const marker = new google.maps.Marker({
-position: { lat: cp.lat, lng: cp.lng },
-map: this.map,
-title: cp.name,
-icon: {
-url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(bonusSvg),
-scaledSize: new google.maps.Size(30, 40),
-anchor: new google.maps.Point(15, 40)
-},
-label: {
-text: `+${cp.points} pt`,
-color: '#FBBF24',
-fontSize: '11px',
-fontWeight: 'bold',
-className: '-mt-12 bg-zinc-900/90 px-1.5 py-0.5 rounded border border-amber-500/60 shadow-lg'
-}
-});
-
-// Tap popup card with details & direct navigation
-marker.addListener('click', () => {
-const popupContent = `
-<div style="background-color: #18181b; color: #f4f4f5; padding: 12px; border-radius: 10px; font-family: system-ui, sans-serif; min-width: 180px;">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-        <span style="background-color: #f59e0b; color: #000; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 9999px;">+${cp.points} PTS</span>
-        <span style="color: #10b981; font-size: 10px; font-weight: 700;">● OPEN NOW</span>
-    </div>
-    <div style="font-weight: 700; font-size: 13px; color: #ffffff; margin-bottom: 4px;">${cp.name}</div>
-    <div style="font-size: 11px; color: #a1a1aa; margin-bottom: 10px;">📍 ${cp.location || 'Riverwest'}</div>
-    <a href="https://www.google.com/maps/search/?api=1&query=${cp.lat},${cp.lng}" target="_blank" style="display: block; text-align: center; background-color: #27272a; color: #38bdf8; text-decoration: none; font-size: 11px; font-weight: 600; padding: 6px; border-radius: 6px; border: 1px solid #3f3f46;">
-        🗺️ Navigate
-    </a>
-</div>
-`;
-
-mapEl._infoWindow.setContent(popupContent);
-mapEl._infoWindow.open(this.map, marker);
-});
-
-mapEl._bonusMarkers.push(marker);
-});
-},
-fitMapToRoute() {
-if (!this.map) return;
-const bounds = new google.maps.LatLngBounds();
-let hasPoints = false;
-
-// Include KML Route
-this.routePaths.forEach(rp => {
-rp.path.forEach(pos => {
-bounds.extend(pos);
-hasPoints = true;
-});
-});
-
-// Include Active Teammates
-this.locations.forEach(loc => {
-bounds.extend({ lat: loc.lat, lng: loc.lng });
-hasPoints = true;
-});
-
-// Include Open Bonus Checkpoints
-this.bonusCheckpoints.forEach(cp => {
-bounds.extend({ lat: cp.lat, lng: cp.lng });
-hasPoints = true;
-});
-
-if (hasPoints) {
-this.map.fitBounds(bounds);
-}
-},
-updateMarkers() {
-if (!this.map) return;
-const mapEl = document.getElementById('map');
-if (!mapEl._riderMarkers) mapEl._riderMarkers = [];
-
-// Clear existing rider markers cleanly
-mapEl._riderMarkers.forEach(marker => marker.setMap(null));
-mapEl._riderMarkers = [];
-
-// Add new rider markers
-this.locations.forEach(loc => {
-const marker = new google.maps.Marker({
-position: { lat: loc.lat, lng: loc.lng },
-map: this.map,
-label: {
-text: loc.initials,
-color: 'white',
-fontWeight: 'bold'
-},
-title: `${loc.name} (${loc.speed} • 🔋 ${loc.battery})`
-});
-mapEl._riderMarkers.push(marker);
-});
-}
-}"
+            // Add new rider markers
+            this.locations.forEach(loc => {
+                const marker = new google.maps.Marker({
+                    position: { lat: loc.lat, lng: loc.lng },
+                    map: this.map,
+                    label: {
+                        text: loc.initials,
+                        color: 'white',
+                        fontWeight: 'bold'
+                    },
+                    title: `${loc.name} (${loc.speed} • 🔋 ${loc.battery})`
+                });
+                mapEl._riderMarkers.push(marker);
+            });
+        }
+    }"
 >
-<div id="map" class="h-full w-full" wire:ignore></div>
+    <div id="map" class="h-full w-full" wire:ignore></div>
 
-<script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_key') }}&callback=initMap" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_key') }}&callback=initMap" async defer></script>
 
-<script>
-    function initMap() {
-        const mapContainer = document.getElementById('map');
-        const mapOptions = {
-            zoom: 13,
-            styles: [
-                { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-                { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-                { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-                { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-                { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-                { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#263c3f" }] },
-                { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b9a76" }] },
-                { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] },
-                { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
-                { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
-                { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
-                { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
-                { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3d19c" }] },
-                { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
-                { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-                { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
-                { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
-                { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] },
-            ],
-        };
-        const mapElement = document.getElementById("map");
-        const map = new google.maps.Map(mapElement, mapOptions);
+    <script>
+        function initMap() {
+            const mapContainer = document.getElementById('map');
+            const mapOptions = {
+                zoom: 13,
+                styles: [
+                    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+                    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+                    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+                    { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+                    { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+                    { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#263c3f" }] },
+                    { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b9a76" }] },
+                    { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] },
+                    { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
+                    { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
+                    { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
+                    { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
+                    { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3d19c" }] },
+                    { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
+                    { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+                    { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
+                    { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
+                    { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] },
+                ],
+            };
+            const mapElement = document.getElementById("map");
+            const map = new google.maps.Map(mapElement, mapOptions);
 
-        const data = Alpine.$data(mapElement.closest('[x-data]'));
-        data.map = map;
-        data.renderRoute();
-        data.updateMarkers();
-        data.renderBonusCheckpoints();
-    }
-</script>
+            const data = Alpine.$data(mapElement.closest('[x-data]'));
+            data.map = map;
+            data.renderRoute();
+            data.updateMarkers();
+            data.renderBonusCheckpoints();
+        }
+    </script>
 </div>
