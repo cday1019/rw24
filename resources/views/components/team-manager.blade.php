@@ -151,62 +151,56 @@ new class extends Component
                     <flux:subheading>{{ __('Track who has the manifest, who is on deck, and team activity.') }}</flux:subheading>
                 </div>
 
-                <flux:table>
-                    <flux:table.columns>
-                        <flux:table.column>{{ __('Name') }}</flux:table.column>
-                        <flux:table.column>{{ __('Status') }}</flux:table.column>
-                    </flux:table.columns>
-
-                    <flux:table.rows>
-                        @foreach ($this->members as $member)
-                            @php
-                                $location = $member->latestLocation;
-                                $hasManifest = in_array($member->status, ['riding_manifest', 'bonus_manifest']);
-                            @endphp
-                            <flux:table.row wire:key="roster-member-{{ $member->id }}">
-                                <flux:table.cell>
-                                    <div class="flex items-center gap-3">
-                                        <flux:avatar :name="$member->name" size="xs" />
-                                        <div class="flex flex-col">
-                                            <div class="flex items-center gap-2">
-                                                <span class="font-medium text-white">{{ $member->name }}</span>
-                                                @if ($hasManifest)
-                                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">MANIFEST HOLDER</span>
-                                                @endif
-                                            </div>
-                                            @if ($location)
-                                                <span class="text-xs text-neutral-400 flex items-center gap-2 mt-0.5">
-                                                    <span>⚡ {{ round($location->speed ?? 0) }} mph</span>
-                                                    @if (! is_null($location->battery))
-                                                        <span>• 🔋 {{ $location->battery }}%</span>
-                                                    @endif
-                                                </span>
-                                            @else
-                                                <span class="text-xs text-neutral-500 mt-0.5">No telemetry yet</span>
-                                            @endif
-                                        </div>
+                <!-- Responsive Mobile-First Member Cards -->
+                <div class="space-y-3">
+                    @foreach ($this->members as $member)
+                        @php
+                            $location = $member->latestLocation;
+                            $hasManifest = in_array($member->status, ['riding_manifest', 'bonus_manifest']);
+                        @endphp
+                        <div wire:key="roster-member-{{ $member->id }}" class="p-3.5 rounded-xl bg-zinc-950/60 border border-zinc-800/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <!-- Member Info & Telemetry -->
+                            <div class="flex items-center gap-3">
+                                <flux:avatar :name="$member->name" size="sm" />
+                                <div class="flex flex-col min-w-0">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="font-bold text-white text-sm truncate">{{ $member->name }}</span>
+                                        @if ($hasManifest)
+                                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 whitespace-nowrap">MANIFEST HOLDER</span>
+                                        @endif
                                     </div>
-                                </flux:table.cell>
-                                <flux:table.cell>
-                                    <!-- Mobile-Friendly Status Picker -->
-                                    <flux:select
-                                        wire:change="updateStatus({{ $member->id }}, $event.target.value)"
-                                        size="sm"
-                                        class="w-full min-w-[200px]"
-                                    >
-                                        <option value="riding_manifest" @selected($member->status === 'riding_manifest')>📜 Riding (Has Manifest)</option>
-                                        <option value="bonus_manifest" @selected($member->status === 'bonus_manifest')>🎯 Bonus (Has Manifest)</option>
-                                        <option value="on_deck_next" @selected($member->status === 'on_deck_next')>⏱️ On Deck (Gets Manifest Next)</option>
-                                        <option value="bonus_waiting" @selected($member->status === 'bonus_waiting')>⏳ Bonus (No Manifest)</option>
-                                        <option value="riding_support" @selected($member->status === 'riding_support')>🚲 Riding (Support)</option>
-                                        <option value="available" @selected($member->status === 'available')>🙋 Available / Ready</option>
-                                        <option value="off_duty" @selected($member->status === 'off_duty')>⛺ Off Duty</option>
-                                    </flux:select>
-                                </flux:table.cell>
-                            </flux:table.row>
-                        @endforeach
-                    </flux:table.rows>
-                </flux:table>
+                                    @if ($location)
+                                        <span class="text-xs text-neutral-400 flex items-center gap-2 mt-0.5">
+                                            <span>⚡ {{ round($location->speed ?? 0) }} mph</span>
+                                            @if (! is_null($location->battery))
+                                                <span>• 🔋 {{ $location->battery }}%</span>
+                                            @endif
+                                        </span>
+                                    @else
+                                        <span class="text-xs text-neutral-500 mt-0.5">No telemetry yet</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <!-- Full-Width Dropdown on Mobile / Auto-Width on Desktop -->
+                            <div class="w-full sm:w-auto sm:min-w-[220px]">
+                                <flux:select
+                                    wire:change="updateStatus({{ $member->id }}, $event.target.value)"
+                                    size="sm"
+                                    class="w-full"
+                                >
+                                    <option value="riding_manifest" @selected($member->status === 'riding_manifest')>📜 Riding (Has Manifest)</option>
+                                    <option value="bonus_manifest" @selected($member->status === 'bonus_manifest')>🎯 Bonus (Has Manifest)</option>
+                                    <option value="on_deck_next" @selected($member->status === 'on_deck_next')>⏱️ On Deck (Gets Manifest Next)</option>
+                                    <option value="bonus_waiting" @selected($member->status === 'bonus_waiting')>⏳ Bonus (No Manifest)</option>
+                                    <option value="riding_support" @selected($member->status === 'riding_support')>🚲 Riding (Support)</option>
+                                    <option value="available" @selected($member->status === 'available')>🙋 Available / Ready</option>
+                                    <option value="off_duty" @selected($member->status === 'off_duty')>⛺ Off Duty</option>
+                                </flux:select>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
             </div>
         </flux:card>
     @endif
