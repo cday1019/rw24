@@ -182,7 +182,7 @@ new class extends Component
 ?>
 
 <div wire:poll.10s class="relative h-full w-full min-h-[400px] rounded-xl overflow-hidden" x-data="raceMap()">
-    <!-- Custom CSS to seamlessly style Google Maps InfoWindow popups -->
+    <!-- Custom CSS to seamlessly style Google Maps InfoWindow popups & multiline marker labels -->
     <style>
         .gm-style-iw {
             background-color: #18181b !important;
@@ -202,6 +202,11 @@ new class extends Component
             filter: invert(1) !important;
             top: 4px !important;
             right: 4px !important;
+        }
+        /* Forces Google Maps marker labels to respect multi-line newlines (\n) */
+        .bonus-map-badge {
+            white-space: pre-line !important;
+            line-height: 1.3 !important;
         }
     </style>
 
@@ -294,6 +299,7 @@ new class extends Component
 
                     // Render open bonus checkpoint markers
                     this.bonusCheckpoints.forEach(cp => {
+                        // Multi-line formatting: Name on line 1, Time window on line 2
                         const labelText = cp.window ? `${cp.name}\n${cp.window}` : cp.name;
 
                         const marker = new google.maps.Marker({
@@ -308,14 +314,14 @@ new class extends Component
                                 strokeWeight: 1.5,
                                 scale: 0.85,
                                 anchor: new google.maps.Point(12, 32),
-                                labelOrigin: new google.maps.Point(12, -10)
+                                labelOrigin: new google.maps.Point(12, -18) // Offset slightly higher to fit 2 lines cleanly
                             },
                             label: {
                                 text: labelText,
                                 color: '#FBBF24',
                                 fontSize: '11px',
                                 fontWeight: 'bold',
-                                className: 'bg-zinc-900/90 px-2 py-1 rounded border border-amber-500/50 shadow-md text-center whitespace-pre leading-tight'
+                                className: 'bonus-map-badge bg-zinc-900/95 px-2.5 py-1 rounded border border-amber-500/50 shadow-md text-center font-sans'
                             }
                         });
 
