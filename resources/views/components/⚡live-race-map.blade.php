@@ -188,7 +188,7 @@ new class extends Component
 ?>
 
 <div wire:poll.10s class="relative h-full w-full min-h-[400px] rounded-xl overflow-hidden" x-data="raceMap()">
-    <!-- High-Contrast Styling for Bonus Checkpoint Map Badges -->
+    <!-- High-Contrast Styling for InfoWindow Popups -->
     <style>
         .gm-style-iw {
             background-color: #18181b !important;
@@ -208,19 +208,6 @@ new class extends Component
             filter: invert(1) !important;
             top: 4px !important;
             right: 4px !important;
-        }
-
-        /* Solid Dark Badge for Maximum Contrast & Readability */
-        .bonus-map-badge {
-            white-space: pre-line !important;
-            line-height: 1.35 !important;
-            background-color: #09090b !important; /* Solid Zinc-950 */
-            border: 1px solid #f59e0b !important; /* Sharp Gold Border */
-            border-radius: 8px !important;
-            padding: 5px 10px !important;
-            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.95), 0 4px 6px -4px rgba(0, 0, 0, 0.9) !important;
-            text-align: center !important;
-            pointer-events: auto !important;
         }
     </style>
 
@@ -311,43 +298,26 @@ new class extends Component
                         mapEl._infoWindow = new google.maps.InfoWindow();
                     }
 
-                    // Render open bonus checkpoint markers
+                    // Render open bonus checkpoint markers (Clean pins without text badges)
                     this.bonusCheckpoints.forEach((cp, index) => {
-                        // Multi-line formatting: Name on line 1, Time window on line 2
-                        const labelText = cp.window ? `${cp.name}\n${cp.window}` : cp.name;
-
                         const marker = new google.maps.Marker({
                             position: { lat: cp.lat, lng: cp.lng },
                             map: this.map,
-                            title: cp.name,
-                            zIndex: 100 + index, // Stack neatly above base map elements
+                            title: `${cp.name} (${cp.window || 'Open'})`,
+                            zIndex: 100 + index,
                             icon: {
                                 path: 'M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20C24 5.37 18.63 0 12 0z',
                                 fillColor: cp.isOpenNow ? '#F59E0B' : '#38BDF8', // Amber if Open Now, Cyan if Opening Soon
                                 fillOpacity: 1,
                                 strokeColor: '#FFFFFF',
-                                strokeWeight: 1.5,
-                                scale: 0.8,
-                                anchor: new google.maps.Point(12, 32),
-                                labelOrigin: new google.maps.Point(12, -22)
-                            },
-                            label: {
-                                text: labelText,
-                                color: '#FFFFFF',
-                                fontSize: '11px',
-                                fontWeight: 'bold',
-                                className: 'bonus-map-badge'
+                                strokeWeight: 2,
+                                scale: 1.1, // Sized cleanly for easy tapping
+                                anchor: new google.maps.Point(12, 32)
                             }
                         });
 
-                        // Tap/Hover to bring overlapping label to top
-                        marker.addListener('mouseover', () => {
-                            marker.setZIndex(9999);
-                        });
-
+                        // Tap popup card with details & direct navigation
                         marker.addListener('click', () => {
-                            marker.setZIndex(9999);
-
                             const statusHtml = cp.isOpenNow
                                 ? `<span style="color: #10b981; font-size: 10px; font-weight: 700;">● OPEN NOW</span>`
                                 : `<span style="color: #38bdf8; font-size: 10px; font-weight: 700;">⏱ OPENS IN < 1 HR</span>`;
