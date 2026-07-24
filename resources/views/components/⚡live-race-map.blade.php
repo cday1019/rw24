@@ -182,14 +182,14 @@ new class extends Component
 ?>
 
 <div wire:poll.10s class="relative h-full w-full min-h-[400px] rounded-xl overflow-hidden" x-data="raceMap()">
-    <!-- Custom CSS to seamlessly style Google Maps InfoWindow popups & multiline marker labels -->
+    <!-- High-Contrast Styling for Bonus Checkpoint Map Badges -->
     <style>
         .gm-style-iw {
             background-color: #18181b !important;
             border: 1px solid #27272a !important;
             border-radius: 12px !important;
             padding: 0 !important;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5) !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7) !important;
         }
         .gm-style-iw-d {
             overflow: hidden !important;
@@ -203,10 +203,18 @@ new class extends Component
             top: 4px !important;
             right: 4px !important;
         }
-        /* Forces Google Maps marker labels to respect multi-line newlines (\n) */
+
+        /* Solid Dark Badge for Maximum Contrast & Readability */
         .bonus-map-badge {
             white-space: pre-line !important;
-            line-height: 1.3 !important;
+            line-height: 1.35 !important;
+            background-color: #09090b !important; /* Solid Zinc-950 */
+            border: 1px solid #f59e0b !important; /* Sharp Gold Border */
+            border-radius: 8px !important;
+            padding: 5px 10px !important;
+            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.95), 0 4px 6px -4px rgba(0, 0, 0, 0.9) !important;
+            text-align: center !important;
+            pointer-events: auto !important;
         }
     </style>
 
@@ -298,35 +306,40 @@ new class extends Component
                     }
 
                     // Render open bonus checkpoint markers
-                    this.bonusCheckpoints.forEach(cp => {
-                        // Multi-line formatting: Name on line 1, Time window on line 2
+                    this.bonusCheckpoints.forEach((cp, index) => {
                         const labelText = cp.window ? `${cp.name}\n${cp.window}` : cp.name;
 
                         const marker = new google.maps.Marker({
                             position: { lat: cp.lat, lng: cp.lng },
                             map: this.map,
                             title: cp.name,
+                            zIndex: 100 + index, // Stack neatly above base map elements
                             icon: {
                                 path: 'M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20C24 5.37 18.63 0 12 0z',
                                 fillColor: '#F59E0B',
                                 fillOpacity: 1,
                                 strokeColor: '#FFFFFF',
                                 strokeWeight: 1.5,
-                                scale: 0.85,
+                                scale: 0.8,
                                 anchor: new google.maps.Point(12, 32),
-                                labelOrigin: new google.maps.Point(12, -18) // Offset slightly higher to fit 2 lines cleanly
+                                labelOrigin: new google.maps.Point(12, -22) // Lifted cleanly above pin tip
                             },
                             label: {
                                 text: labelText,
-                                color: '#FBBF24',
+                                color: '#FFFFFF', // High-contrast white title
                                 fontSize: '11px',
                                 fontWeight: 'bold',
-                                className: 'bonus-map-badge bg-zinc-900/95 px-2.5 py-1 rounded border border-amber-500/50 shadow-md text-center font-sans'
+                                className: 'bonus-map-badge'
                             }
                         });
 
-                        // Tap popup card with details & direct navigation
+                        // Tap/Hover to bring overlapping label to top
+                        marker.addListener('mouseover', () => {
+                            marker.setZIndex(9999);
+                        });
+
                         marker.addListener('click', () => {
+                            marker.setZIndex(9999);
                             const popupContent = `
                                 <div style="background-color: #18181b; color: #f4f4f5; padding: 14px; font-family: system-ui, -apple-system, sans-serif; min-width: 190px;">
                                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
