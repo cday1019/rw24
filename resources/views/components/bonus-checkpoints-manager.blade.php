@@ -62,7 +62,7 @@ new class extends Component
     public function openCreateModal(): void
     {
         $this->reset(['editingCheckpointId', 'name', 'location', 'latitude', 'longitude', 'opens_at', 'closes_at', 'points', 'assigned_user_id', 'notes']);
-        $this->points = 1;
+        $this->points = 2;
 
         // Default opens_at to Friday night of race weekend if empty
         $this->opens_at = now()->format('Y-m-d\T19:00');
