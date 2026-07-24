@@ -5,6 +5,7 @@ use Livewire\Attributes\Computed;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Carbon;
 
 new class extends Component
 {
@@ -175,8 +176,8 @@ new class extends Component
                                             @if (! is_null($location->battery))
                                                 <span>• 🔋 {{ $location->battery }}%</span>
                                             @endif
-                                            @if ($location->pinged_at)
-                                                <span class="text-neutral-500 text-[11px] font-mono">• {{ $location->pinged_at->diffForHumans(['short' => true]) }}</span>
+                                            @if (! empty($location->pinged_at))
+                                                <span class="text-neutral-500 text-[11px] font-mono">• {{ Carbon::parse($location->pinged_at)->diffForHumans() }}</span>
                                             @endif
                                         </span>
                                     @else
